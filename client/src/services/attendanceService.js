@@ -20,6 +20,16 @@ export const getAttendance = async (params) => {
   return response.data;
 };
 
+export const updateAttendance = async (id, data) => {
+  const response = await api.put(`/attendance/${id}/edit`, data);
+  return response.data;
+};
+
+export const markAttendanceManual = async (data) => {
+  const response = await api.post('/attendance/manual', data);
+  return response.data;
+};
+
 export const applyLeave = async (leaveData) => {
   const response = await api.post('/leaves', leaveData);
   return response.data;

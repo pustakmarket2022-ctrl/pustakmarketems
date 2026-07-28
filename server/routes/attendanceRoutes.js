@@ -4,6 +4,7 @@ const {
   checkIn,
   checkOut,
   editAttendance,
+  markAttendanceManual,
   getAttendance,
   getMyAttendance,
 } = require('../controllers/attendanceController');
@@ -14,6 +15,8 @@ router.use(protect);
 router.post('/check-in', checkIn);
 router.post('/check-out', checkOut);
 router.get('/my', getMyAttendance);
+
+router.post('/manual', authorize('Admin'), markAttendanceManual);
 router.put('/:id/edit', authorize('Admin'), editAttendance);
 router.get('/', authorize('Admin'), getAttendance);
 

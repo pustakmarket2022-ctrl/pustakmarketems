@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Clock, Calendar, Check, X, FileSpreadsheet, Download } from 'lucide-react';
-import { getAttendance, getLeaves, reviewLeave } from '../../services/attendanceService';
+import { Clock, Calendar, Check, X, FileSpreadsheet, Edit, Plus, UserCheck } from 'lucide-react';
+import { getAttendance, getLeaves, reviewLeave, updateAttendance, markAttendanceManual } from '../../services/attendanceService';
 import { getUsers } from '../../services/userService';
 import { exportReportExcel } from '../../services/reportService';
 import Badge from '../../components/common/Badge';
 import Pagination from '../../components/common/Pagination';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Modal from '../../components/common/Modal';
 import { NotificationContext } from '../../context/NotificationContext';
+
+const statusOptions = ['Present', 'Absent', 'Half Day', 'Leave', 'Overtime', 'Holiday'];
 
 const AttendancePage = () => {
   const { addToast } = useContext(NotificationContext);
@@ -22,6 +25,20 @@ const AttendancePage = () => {
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Edit / Manual Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [editForm, setEditForm] = useState({
+    userId: '',
+    date: new Date().toISOString().split('T')[0],
+    status: 'Present',
+    checkIn: '',
+    checkOut: '',
+    workingHours: 8,
+    reason: 'Admin Presenty Update',
+    notes: '',
+  });
 
   useEffect(() => {
     getUsers({ limit: 100 }).then((res) => setEmployees(res.data || [])).catch(() => {});
@@ -66,6 +83,52 @@ const AttendancePage = () => {
     }
   }, [tab, fetchAttendanceLogs, fetchLeaveRequests]);
 
+  const handleOpenManualModal = (log = null) => {
+    if (log) {
+      setSelectedLog(log);
+      setEditForm({
+        userId: log.user?._id || log.user,
+        date: log.date || new Date().toISOString().split('T')[0],
+        status: log.status || 'Present',
+        checkIn: log.checkIn ? new Date(log.checkIn).toISOString().substring(11, 16) : '',
+        checkOut: log.checkOut ? new Date(log.checkOut).toISOString().substring(11, 16) : '',
+        workingHours: log.workingHours || 8,
+        reason: 'Admin Presenty Update',
+        notes: log.notes || '',
+      });
+    } else {
+      setSelectedLog(null);
+      setEditForm({
+        userId: employees[0]?._id || '',
+        date: new Date().toISOString().split('T')[0],
+        status: 'Present',
+        checkIn: '09:30',
+        checkOut: '18:30',
+        workingHours: 9,
+        reason: 'Admin Manual Entry',
+        notes: '',
+      });
+    }
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveAttendance = async (e) => {
+    e.preventDefault();
+    try {
+      if (selectedLog) {
+        await updateAttendance(selectedLog._id, editForm);
+        addToast(`Attendance status updated for ${selectedLog.user?.fullName}`, 'success');
+      } else {
+        await markAttendanceManual(editForm);
+        addToast('Attendance marked successfully', 'success');
+      }
+      setIsEditModalOpen(false);
+      fetchAttendanceLogs();
+    } catch (err) {
+      addToast('Failed to update attendance record', 'danger');
+    }
+  };
+
   const handleExportExcel = async () => {
     setExporting(true);
     try {
@@ -104,27 +167,26 @@ const AttendancePage = () => {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Attendance & Leave Management</h1>
-          <p className="page-subtitle">Track employee-wise clock-in/out logs, filter by employee/date, & export Excel reports</p>
+          <h1 className="page-title">Attendance & Presenty Management</h1>
+          <p className="page-subtitle">Admin attendance override, daily check-in logs, leave approvals, and Excel reports</p>
         </div>
 
         <div className="flex-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            className="btn btn-primary"
-            onClick={handleExportExcel}
-            disabled={exporting}
-          >
+          <button className="btn btn-primary" onClick={() => handleOpenManualModal(null)}>
+            <Plus size={16} /> Mark / Edit Presenty
+          </button>
+          <button className="btn btn-secondary" onClick={handleExportExcel} disabled={exporting}>
             <FileSpreadsheet size={16} /> {exporting ? 'Exporting...' : 'Export Excel'}
           </button>
           <button
-            className={`btn ${tab === 'attendance' ? 'btn-secondary' : 'btn-secondary'}`}
+            className="btn btn-secondary"
             style={{ background: tab === 'attendance' ? 'var(--primary-light)' : undefined, color: tab === 'attendance' ? 'var(--primary)' : undefined }}
             onClick={() => setTab('attendance')}
           >
             <Clock size={16} /> Daily Attendance Logs
           </button>
           <button
-            className={`btn ${tab === 'leaves' ? 'btn-secondary' : 'btn-secondary'}`}
+            className="btn btn-secondary"
             style={{ background: tab === 'leaves' ? 'var(--primary-light)' : undefined, color: tab === 'leaves' ? 'var(--primary)' : undefined }}
             onClick={() => setTab('leaves')}
           >
@@ -215,14 +277,15 @@ const AttendancePage = () => {
                   <th>Department</th>
                   <th>Check In</th>
                   <th>Check Out</th>
-                  <th>Working Hours</th>
+                  <th>Hours</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.length === 0 ? (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                    <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                       No attendance records found for selected criteria.
                     </td>
                   </tr>
@@ -242,6 +305,17 @@ const AttendancePage = () => {
                       </td>
                       <td>
                         <Badge text={item.status} />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                          onClick={() => handleOpenManualModal(item)}
+                          title="Edit Presenty Status"
+                        >
+                          <Edit size={14} /> Update Presenty
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -321,6 +395,95 @@ const AttendancePage = () => {
           </table>
         </div>
       )}
+
+      {/* Admin Edit Presenty Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title={selectedLog ? `Update Attendance Presenty - ${selectedLog.user?.fullName || ''} (${selectedLog.date})` : 'Mark / Update Employee Attendance'}
+        maxWidth="500px"
+      >
+        <form onSubmit={handleSaveAttendance}>
+          {!selectedLog && (
+            <div className="form-group">
+              <label className="form-label">Select Employee *</label>
+              <select
+                className="form-select"
+                value={editForm.userId}
+                onChange={(e) => setEditForm({ ...editForm, userId: e.target.value })}
+                required
+              >
+                <option value="">-- Choose Employee --</option>
+                {employees.map((emp) => (
+                  <option key={emp._id} value={emp._id}>
+                    {emp.fullName} ({emp.department} - {emp.employeeId})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label">Attendance Date *</label>
+            <input
+              type="date"
+              className="form-input"
+              value={editForm.date}
+              onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Presenty Status *</label>
+            <select
+              className="form-select"
+              value={editForm.status}
+              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+              required
+            >
+              {statusOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Working Hours (hrs)</label>
+              <input
+                type="number"
+                step="0.5"
+                className="form-input"
+                value={editForm.workingHours}
+                onChange={(e) => setEditForm({ ...editForm, workingHours: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Reason / Audit Note</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Reason for presenty update..."
+                value={editForm.reason}
+                onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="modal-footer" style={{ marginTop: '20px' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Save Presenty Record
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

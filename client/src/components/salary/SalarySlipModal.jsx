@@ -1,20 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Printer, Download, BookMarked, CheckCircle2 } from 'lucide-react';
+import { X, Printer, BookMarked, CheckCircle2, Clock, Calendar } from 'lucide-react';
 import api from '../../services/api';
 
 const SalarySlipModal = ({ salary, onClose }) => {
   const printRef = useRef(null);
   const [completedTasks, setCompletedTasks] = useState([]);
-  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [pendingAdvanceAmount, setPendingAdvanceAmount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (salary && salary.user) {
       const empId = salary.user._id || salary.user;
-      setLoadingTasks(true);
+      setLoading(true);
+      
+      // 1. Fetch completed tasks for employee
       api.get('/tasks', { params: { assignedTo: empId, taskStatus: 'Approved', limit: 100 } })
         .then((res) => setCompletedTasks(res.data?.data || []))
+        .catch(() => {});
+
+      // 2. Fetch pending advance requests for employee
+      api.get('/advances', { params: { user: empId, status: 'Approved', limit: 100 } })
+        .then((res) => {
+          const approvedAdvances = res.data?.data || [];
+          const pendingTotal = approvedAdvances.reduce((sum, adv) => sum + (adv.amount || 0), 0);
+          setPendingAdvanceAmount(pendingTotal);
+        })
         .catch(() => {})
-        .finally(() => setLoadingTasks(false));
+        .finally(() => setLoading(false));
     }
   }, [salary]);
 
@@ -59,7 +71,7 @@ const SalarySlipModal = ({ salary, onClose }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '800px', width: '100%', padding: '0', overflow: 'hidden' }}>
+      <div className="modal-content" style={{ maxWidth: '820px', width: '100%', padding: '0', overflow: 'hidden' }}>
         {/* Header toolbar */}
         <div
           style={{
@@ -164,36 +176,44 @@ const SalarySlipModal = ({ salary, onClose }) => {
             </tbody>
           </table>
 
-          {/* Completed Work / Tasks Table */}
-          {completedTasks.length > 0 && (
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={16} color="#16a34a" /> Completed Tasks Deliverables Breakdown:
-              </h4>
+          {/* Completed Work / Tasks Table Breakdown */}
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle2 size={16} color="#16a34a" /> Completed Tasks Deliverables Breakdown:
+            </h4>
+            {completedTasks.length === 0 ? (
+              <div style={{ padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.825rem', color: '#64748b' }}>
+                No task-based incentives recorded for this period.
+              </div>
+            ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.825rem', border: '1px solid #e2e8f0' }}>
                 <thead>
                   <tr style={{ background: '#f1f5f9', color: '#475569', textTransform: 'uppercase', fontSize: '0.75rem' }}>
                     <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Task ID</th>
-                    <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Task Title</th>
-                    <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Publication Project</th>
-                    <th style={{ padding: '6px 10px', textAlign: 'right', border: '1px solid #e2e8f0' }}>Amount (₹)</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Task Name</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Completion Date</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Project Book</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'right', border: '1px solid #e2e8f0' }}>Task Amount (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {completedTasks.map((t) => (
                     <tr key={t._id}>
                       <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0', fontWeight: 600, color: '#2563eb' }}>{t.taskId}</td>
-                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0' }}>{t.taskTitle}</td>
+                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0', fontWeight: 600 }}>{t.taskTitle}</td>
+                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0', color: '#475569' }}>
+                        {new Date(t.updatedAt || t.createdAt).toLocaleDateString()}
+                      </td>
                       <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0' }}>{t.project?.bookName || 'General'}</td>
-                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 600, color: '#16a34a' }}>
+                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 700, color: '#16a34a' }}>
                         ₹{(t.taskPaymentAmount || 0).toLocaleString()}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Detailed Earnings vs Deductions Breakdown */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
@@ -240,6 +260,10 @@ const SalarySlipModal = ({ salary, onClose }) => {
                   <tr>
                     <td style={{ padding: '5px 0', color: '#475569' }}>Advance Salary Deduction:</td>
                     <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.advanceSalary || 0).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '5px 0', color: '#475569' }}>Pending Advance Balance:</td>
+                    <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 700, color: '#d97706' }}>₹{pendingAdvanceAmount.toLocaleString()}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '5px 0', color: '#475569' }}>Penalty / Fine:</td>

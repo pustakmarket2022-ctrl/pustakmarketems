@@ -4,6 +4,7 @@ import { getTasks, submitTask, addComment, updateTaskStatus } from '../../servic
 import TaskSubmitModal from '../../components/tasks/TaskSubmitModal';
 import Badge from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import NotesWidget from '../../components/common/NotesWidget';
 import { NotificationContext } from '../../context/NotificationContext';
 
 const MyTasksPage = () => {
@@ -142,6 +143,11 @@ const MyTasksPage = () => {
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* Task Notes Widget */}
+                <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                  <NotesWidget entityType="Task" entityId={t._id} entityName={t.taskTitle} />
                 </div>
 
                 {/* Submit Action */}
