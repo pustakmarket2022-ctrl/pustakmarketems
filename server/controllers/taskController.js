@@ -209,9 +209,15 @@ exports.submitTask = async (req, res, next) => {
       req.files.forEach((file) => {
         const fileInfo = getUploadedFileInfo(file);
         task.attachments.push({
-          fileName: file.originalname,
+          fileName: file.originalname || file.filename || 'Deliverable',
           filePath: fileInfo.path,
         });
+      });
+    } else if (req.file) {
+      const fileInfo = getUploadedFileInfo(req.file);
+      task.attachments.push({
+        fileName: req.file.originalname || req.file.filename || 'Deliverable',
+        filePath: fileInfo.path,
       });
     }
 
@@ -354,6 +360,22 @@ exports.updateTaskStatus = async (req, res, next) => {
       task.comments.push({
         user: req.user.id,
         text: `[Status Update]: ${note}`,
+      });
+    }
+
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file) => {
+        const fileInfo = getUploadedFileInfo(file);
+        task.attachments.push({
+          fileName: file.originalname || file.filename || 'Deliverable',
+          filePath: fileInfo.path,
+        });
+      });
+    } else if (req.file) {
+      const fileInfo = getUploadedFileInfo(req.file);
+      task.attachments.push({
+        fileName: req.file.originalname || req.file.filename || 'Deliverable',
+        filePath: fileInfo.path,
       });
     }
 

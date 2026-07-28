@@ -27,8 +27,8 @@ router
   .put(authorize('Admin'), updateTask)
   .delete(authorize('Admin'), deleteTask);
 
-router.put('/:id/status', updateTaskStatus);
-router.put('/:id/submit', upload.array('attachments', 5), submitTask);
+router.put('/:id/status', upload.array('attachments', 10), updateTaskStatus);
+router.put('/:id/submit', upload.array('attachments', 10), submitTask);
 router.put('/:id/review', authorize('Admin'), reviewTask);
 router.post('/:id/comments', addComment);
 
