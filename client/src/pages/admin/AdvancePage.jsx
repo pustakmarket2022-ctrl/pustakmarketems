@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { CreditCard, CheckCircle2, XCircle, Search, Filter } from 'lucide-react';
+import { CreditCard, CheckCircle2, XCircle, Search, Filter, FileSpreadsheet } from 'lucide-react';
 import { getAdvances, reviewAdvance } from '../../services/advanceService';
+import { exportReportExcel } from '../../services/reportService';
 import { NotificationContext } from '../../context/NotificationContext';
 
 const AdvancePage = () => {
@@ -54,8 +55,27 @@ const AdvancePage = () => {
           <h1 className="page-title flex-row" style={{ gap: '10px' }}>
             <CreditCard color="var(--primary)" size={28} /> Advance Salary Requests
           </h1>
-          <p className="page-subtitle">Review & approve employee salary advances</p>
         </div>
+        <button
+          className="btn btn-primary"
+          onClick={async () => {
+            try {
+              const res = await exportReportExcel('advance', { status: filterStatus });
+              const url = window.URL.createObjectURL(new Blob([res.data]));
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', `Advance_Salary_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              addToast('Advance Salary Excel Report exported successfully!', 'success');
+            } catch (e) {
+              addToast('Failed to export Excel', 'danger');
+            }
+          }}
+        >
+          <FileSpreadsheet size={16} /> Export Excel
+        </button>
       </div>
 
       {/* Filters */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   BookMarked,
   Search,
@@ -7,10 +7,8 @@ import {
   Clock,
   Circle,
   ArrowLeft,
-  BookOpen,
   Calendar,
   Users,
-  ShieldCheck,
   Sparkles,
 } from 'lucide-react';
 import api from '../../services/api';
@@ -57,29 +55,31 @@ const ProjectTrackingPage = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-main)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-main)', overflowX: 'hidden' }}>
       {/* Top Header Navigation */}
       <header
         style={{
-          height: '75px',
+          minHeight: '70px',
           background: 'var(--bg-header)',
           backdropFilter: 'blur(12px)',
           borderBottom: '1px solid var(--border-color)',
-          padding: '0 40px',
+          padding: '12px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
           position: 'sticky',
           top: 0,
           zIndex: 100,
         }}
       >
-        <div className="flex-row" style={{ gap: '12px', cursor: 'pointer' }} onClick={() => navigate('/')}>
+        <div className="flex-row" style={{ gap: '10px', cursor: 'pointer' }} onClick={() => navigate('/')}>
           <div
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
               background: 'linear-gradient(135deg, var(--primary), var(--accent))',
               display: 'flex',
               alignItems: 'center',
@@ -87,32 +87,32 @@ const ProjectTrackingPage = () => {
               color: '#ffffff',
             }}
           >
-            <BookMarked size={24} />
+            <BookMarked size={22} />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.01em' }}>
+            <div style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.01em', lineHeight: '1.2' }}>
               PUSTAK MARKET
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-              Client & Author Tracking Portal
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              Client Tracking Portal
             </div>
           </div>
         </div>
 
-        <div className="flex-row" style={{ gap: '16px' }}>
+        <div className="flex-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
           <button className="btn btn-secondary btn-sm" onClick={() => navigate('/')}>
-            <ArrowLeft size={16} /> Home
+            <ArrowLeft size={14} /> Home
           </button>
           <button className="btn btn-primary btn-sm" onClick={() => navigate('/login')}>
-            Staff Portal Login
+            Staff Login
           </button>
         </div>
       </header>
 
       {/* Main Container */}
-      <div style={{ maxWidth: '960px', margin: '40px auto', padding: '0 20px' }}>
+      <div style={{ maxWidth: '960px', margin: '24px auto', padding: '0 16px' }}>
         {/* Banner Title */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div
             style={{
               display: 'inline-flex',
@@ -124,15 +124,15 @@ const ProjectTrackingPage = () => {
               borderRadius: '20px',
               fontSize: '0.8rem',
               fontWeight: 700,
-              marginBottom: '12px',
+              marginBottom: '10px',
             }}
           >
-            <Sparkles size={14} /> Official Author & Client Project Tracker
+            <Sparkles size={14} /> Author & Client Project Tracker
           </div>
-          <h1 style={{ fontSize: '2.4rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+          <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
             Real-Time Book Publication Status
           </h1>
-          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
             Check your manuscript editing progress, cover design, proofreading status, & release timelines.
           </p>
         </div>
@@ -141,21 +141,21 @@ const ProjectTrackingPage = () => {
         <div
           className="card"
           style={{
-            padding: '28px',
+            padding: '20px',
             boxShadow: 'var(--shadow-lg)',
             border: '1px solid var(--border-color)',
-            marginBottom: '32px',
+            marginBottom: '24px',
           }}
         >
           <form onSubmit={handleSearch}>
-            <div className="flex-row" style={{ gap: '12px', flexWrap: 'wrap' }}>
-              <div className="search-input-wrapper" style={{ flex: 1, minWidth: '280px' }}>
-                <Search className="search-icon" size={20} />
+            <div className="flex-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
+              <div className="search-input-wrapper" style={{ flex: '1 1 240px' }}>
+                <Search className="search-icon" size={18} />
                 <input
                   type="text"
                   className="form-input"
-                  style={{ padding: '14px 14px 14px 42px', fontSize: '1rem' }}
-                  placeholder="Enter Project ID (e.g. PM-2026-0001), ISBN, or Book Title..."
+                  style={{ padding: '12px 12px 12px 38px', fontSize: '0.95rem' }}
+                  placeholder="Enter Project ID (e.g. PM-2026-0001), ISBN, or Title..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   required
@@ -164,10 +164,10 @@ const ProjectTrackingPage = () => {
               <button
                 type="submit"
                 className="btn btn-primary"
-                style={{ padding: '14px 28px', fontSize: '1rem' }}
+                style={{ padding: '12px 20px', fontSize: '0.95rem' }}
                 disabled={loading}
               >
-                {loading ? 'Searching...' : 'Track Project Status'}
+                {loading ? 'Searching...' : 'Track Status'}
               </button>
             </div>
           </form>
@@ -178,13 +178,14 @@ const ProjectTrackingPage = () => {
           <div
             className="card"
             style={{
-              padding: '20px',
+              padding: '16px',
               background: 'var(--danger-bg)',
               color: 'var(--danger)',
               border: '1px solid var(--danger)',
               textAlign: 'center',
               fontWeight: 600,
-              marginBottom: '32px',
+              marginBottom: '24px',
+              fontSize: '0.9rem',
             }}
           >
             {error}
@@ -196,29 +197,29 @@ const ProjectTrackingPage = () => {
           <div
             className="card"
             style={{
-              padding: '32px',
+              padding: '20px',
               boxShadow: 'var(--shadow-lg)',
               border: '1px solid var(--primary)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '24px',
+              gap: '18px',
               animation: 'modalPop 0.3s ease-out',
             }}
           >
             {/* Header info */}
-            <div className="flex-row" style={{ justifyContent: 'space-between' }}>
+            <div className="flex-row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
               <div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Project ID: </span>
-                <strong style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>{trackingData.projectId}</strong>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Project ID: </span>
+                <strong style={{ color: 'var(--primary)', fontSize: '1rem' }}>{trackingData.projectId}</strong>
               </div>
               <Badge text={trackingData.status} />
             </div>
 
             <div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '6px' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
                 {trackingData.bookName}
               </h2>
-              <div className="flex-row" style={{ gap: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+              <div className="flex-row" style={{ gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
                 <span>Author: <strong>{trackingData.author}</strong></span>
                 <span>•</span>
                 <span>Format: <strong>{trackingData.publicationType}</strong> ({trackingData.category})</span>
@@ -228,23 +229,23 @@ const ProjectTrackingPage = () => {
             </div>
 
             {/* Overall Completion Percentage Bar */}
-            <div style={{ background: 'var(--bg-input)', padding: '20px', borderRadius: '12px' }}>
-              <div className="flex-row" style={{ justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '8px' }}>
+            <div style={{ background: 'var(--bg-input)', padding: '16px', borderRadius: '10px' }}>
+              <div className="flex-row" style={{ justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Overall Publishing Progress</span>
-                <strong style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>{trackingData.completionPercentage}% Complete</strong>
+                <strong style={{ color: 'var(--primary)', fontSize: '1rem' }}>{trackingData.completionPercentage}% Complete</strong>
               </div>
-              <div className="progress-bar-bg" style={{ height: '12px' }}>
+              <div className="progress-bar-bg" style={{ height: '10px' }}>
                 <div className="progress-bar-fill" style={{ width: `${trackingData.completionPercentage}%` }} />
               </div>
             </div>
 
             {/* Live Milestone Tracking Steps */}
             <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '10px' }}>
                 Live Publication Stages & Milestone Steps
               </h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {trackingData.milestones && trackingData.milestones.length > 0 ? (
                   trackingData.milestones.map((m, idx) => (
                     <div
@@ -252,33 +253,23 @@ const ProjectTrackingPage = () => {
                       className="flex-row"
                       style={{
                         justifyContent: 'space-between',
-                        padding: '14px 18px',
+                        padding: '10px 14px',
                         background: m.status === 'In Progress' ? 'rgba(99, 102, 241, 0.08)' : 'var(--bg-input)',
                         border: m.status === 'In Progress' ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                        borderRadius: '10px',
+                        borderRadius: '8px',
+                        flexWrap: 'wrap',
+                        gap: '8px',
                       }}
                     >
-                      <div className="flex-row" style={{ gap: '14px' }}>
-                        {m.status === 'Completed' && (
-                          <div style={{ color: 'var(--success)', display: 'flex', alignItems: 'center' }}>
-                            <CheckCircle2 size={22} />
-                          </div>
-                        )}
-                        {m.status === 'In Progress' && (
-                          <div style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center' }}>
-                            <Clock size={22} className="pulse" />
-                          </div>
-                        )}
-                        {m.status === 'Pending' && (
-                          <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-                            <Circle size={22} />
-                          </div>
-                        )}
+                      <div className="flex-row" style={{ gap: '10px' }}>
+                        {m.status === 'Completed' && <CheckCircle2 size={18} color="var(--success)" />}
+                        {m.status === 'In Progress' && <Clock size={18} color="var(--primary)" />}
+                        {m.status === 'Pending' && <Circle size={18} color="var(--text-muted)" />}
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: m.status === 'Pending' ? 'var(--text-muted)' : 'var(--text-main)' }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: m.status === 'Pending' ? 'var(--text-muted)' : 'var(--text-main)' }}>
                             Stage {idx + 1}: {m.stepName}
                           </div>
-                          {m.notes && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>{m.notes}</div>}
+                          {m.notes && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.notes}</div>}
                         </div>
                       </div>
 
@@ -286,7 +277,7 @@ const ProjectTrackingPage = () => {
                     </div>
                   ))
                 ) : (
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No milestone steps specified yet.</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No milestone steps specified yet.</div>
                 )}
               </div>
             </div>
@@ -296,28 +287,30 @@ const ProjectTrackingPage = () => {
               className="flex-row"
               style={{
                 justifyContent: 'space-between',
-                paddingTop: '16px',
+                paddingTop: '14px',
                 borderTop: '1px solid var(--border-color)',
-                fontSize: '0.9rem',
+                fontSize: '0.85rem',
                 color: 'var(--text-secondary)',
+                flexWrap: 'wrap',
+                gap: '10px',
               }}
             >
-              <div className="flex-row" style={{ gap: '12px' }}>
-                <div className="flex-row" style={{ gap: '8px' }}>
-                  <Users size={18} color="var(--primary)" />
-                  <span>Assigned Specialists: <strong>{trackingData.teamCount} Editorial Members</strong></span>
+              <div className="flex-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
+                <div className="flex-row" style={{ gap: '6px' }}>
+                  <Users size={16} color="var(--primary)" />
+                  <span>Team: <strong>{trackingData.teamCount || 3} Members</strong></span>
                 </div>
                 <button
                   className="btn btn-secondary btn-sm"
                   style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: 600 }}
                   onClick={() => setIsContributorsModalOpen(true)}
                 >
-                  View Team & Work Summary
+                  View Team Summary
                 </button>
               </div>
-              <div className="flex-row" style={{ gap: '8px' }}>
-                <Calendar size={18} color="var(--primary)" />
-                <span>Estimated Release Date: <strong>{new Date(trackingData.deadline).toLocaleDateString()}</strong></span>
+              <div className="flex-row" style={{ gap: '6px' }}>
+                <Calendar size={16} color="var(--primary)" />
+                <span>Target Release: <strong>{new Date(trackingData.deadline).toLocaleDateString()}</strong></span>
               </div>
             </div>
           </div>

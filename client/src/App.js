@@ -52,11 +52,13 @@ import ProjectTrackingPage from './pages/public/ProjectTrackingPage';
 
 // App Layout Shell for Protected Routes
 const AppLayout = () => {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
   return (
     <div className="app-container">
-      <Sidebar />
+      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <div className="main-content">
-        <Header />
+        <Header onToggleMobileSidebar={() => setMobileOpen(!mobileOpen)} />
         <Outlet />
       </div>
     </div>

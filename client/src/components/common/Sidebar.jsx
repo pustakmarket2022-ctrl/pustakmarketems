@@ -15,11 +15,12 @@ import {
   CreditCard,
   Calendar,
   MessageSquare,
+  X,
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { LanguageContext } from '../../context/LanguageContext';
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const { user } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
   const isAdmin = user?.role === 'Admin';
@@ -53,60 +54,98 @@ const Sidebar = () => {
 
   const navItems = isAdmin ? adminNav : employeeNav;
 
+  const closeMobile = () => {
+    if (setMobileOpen) setMobileOpen(false);
+  };
+
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
+    <>
+      {/* Mobile Overlay Background */}
+      {mobileOpen && (
         <div
+          onClick={closeMobile}
           style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ffffff',
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 140,
           }}
-        >
-          <BookMarked size={22} />
-        </div>
-        <div>
-          <div className="sidebar-logo-text">PUSTAK MARKET</div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>EMS Enterprise</div>
-        </div>
-      </div>
+        />
+      )}
 
-      <nav className="sidebar-menu">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-logo" style={{ justifyContent: 'space-between' }}>
+          <div className="flex-row" style={{ gap: '12px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+              }}
             >
-              <Icon size={18} />
-              <span>{item.label}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
+              <BookMarked size={22} />
+            </div>
+            <div>
+              <div className="sidebar-logo-text">PUSTAK MARKET</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>EMS Enterprise</div>
+            </div>
+          </div>
 
-      <div className="sidebar-footer">
-        <div
-          style={{
-            padding: '12px',
-            background: 'var(--bg-input)',
-            borderRadius: '10px',
-            fontSize: '0.75rem',
-            color: 'var(--text-secondary)',
-          }}
-        >
-          <div style={{ fontWeight: 700, color: 'var(--primary)' }}>Book Publishing EMS</div>
-          <div>v2.0.0 (Enterprise)</div>
+          {/* Close button for Mobile drawer */}
+          <button
+            onClick={closeMobile}
+            className="mobile-sidebar-close"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'none',
+            }}
+          >
+            <X size={22} />
+          </button>
         </div>
-      </div>
-    </aside>
+
+        <nav className="sidebar-menu">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={closeMobile}
+                className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div
+            style={{
+              padding: '12px',
+              background: 'var(--bg-input)',
+              borderRadius: '10px',
+              fontSize: '0.75rem',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            <div style={{ fontWeight: 700, color: 'var(--primary)' }}>Book Publishing EMS</div>
+            <div>v2.0.0 (Enterprise)</div>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 };
 

@@ -433,3 +433,41 @@
   justify-content: center;
   font-weight: 700;
 }
+
+/* Mobile & Tablet Sidebar Navigation Drawer Rules */
+@media (max-width: 1023px) {
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+  .mobile-sidebar-close {
+    display: flex !important;
+  }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    bottom: 0;
+    width: 270px;
+    z-index: 150;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.mobile-open {
+    left: 0;
+  }
+  .header-title {
+    display: none;
+  }
+  .logout-text {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-user-info {
+    display: none;
+  }
+  .user-profile-badge {
+    gap: 0;
+  }
+}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Plus, Search, Edit2, Trash2, CheckCircle2, Download, FileText } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, CheckCircle2, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { getTasks, createTask, updateTask, deleteTask, reviewTask } from '../../services/taskService';
 import { getProjects } from '../../services/projectService';
 import { getUsers } from '../../services/userService';
+import { exportReportExcel } from '../../services/reportService';
 import TaskFormModal from '../../components/tasks/TaskFormModal';
 import TaskReviewModal from '../../components/tasks/TaskReviewModal';
 import Badge from '../../components/common/Badge';
@@ -27,6 +28,7 @@ const TasksPage = () => {
   // Filters
   const [search, setSearch] = useState('');
   const [taskStatus, setTaskStatus] = useState('');
+  const [selectedEmp, setSelectedEmp] = useState('');
 
   // Modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -51,6 +53,7 @@ const TasksPage = () => {
         page: currentPage,
         search,
         taskStatus: taskStatus === 'All Statuses' ? '' : taskStatus,
+        assignedTo: selectedEmp,
         limit: 10,
       });
       setTasks(res.data);
@@ -61,7 +64,7 @@ const TasksPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, search, taskStatus, addToast]);
+  }, [currentPage, search, taskStatus, selectedEmp, addToast]);
 
   useEffect(() => {
     fetchDependencies();
@@ -141,9 +144,33 @@ const TasksPage = () => {
           <h1 className="page-title">Task & Working File Deliverables</h1>
           <p className="page-subtitle">Assign editorial tasks, set task payments, & download employee working files</p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenAdd}>
-          <Plus size={18} /> {t('assignTask')}
-        </button>
+        <div className="flex-row" style={{ gap: '10px' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={async () => {
+              try {
+                const params = {};
+                if (selectedEmp) params.user = selectedEmp;
+                const res = await exportReportExcel('tasks', params);
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `Tasks_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                addToast('Tasks Excel Report exported successfully!', 'success');
+              } catch (e) {
+                addToast('Failed to export Excel', 'danger');
+              }
+            }}
+          >
+            <FileSpreadsheet size={16} /> Export Excel
+          </button>
+          <button className="btn btn-primary" onClick={handleOpenAdd}>
+            <Plus size={18} /> {t('assignTask')}
+          </button>
+        </div>
       </div>
 
       <div className="search-filter-panel">
@@ -158,7 +185,23 @@ const TasksPage = () => {
           />
         </div>
 
-        <div className="flex-row" style={{ gap: '10px' }}>
+        <div className="flex-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
+          <select
+            className="form-select"
+            value={selectedEmp}
+            onChange={(e) => {
+              setSelectedEmp(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="">-- Filter By Employee --</option>
+            {employees.map((emp) => (
+              <option key={emp._id} value={emp._id}>
+                {emp.fullName} ({emp.department})
+              </option>
+            ))}
+          </select>
+
           <select className="form-select" value={taskStatus} onChange={(e) => setTaskStatus(e.target.value)}>
             {taskStatuses.map((s) => (
               <option key={s} value={s === 'All Statuses' ? '' : s}>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { DollarSign, Download, CheckCircle, Plus, Edit2 } from 'lucide-react';
+import { DollarSign, Download, CheckCircle, Plus, Edit2, FileSpreadsheet } from 'lucide-react';
 import { getSalaries, generatePayroll, updateSalary, downloadSalarySlip } from '../../services/salaryService';
 import { getUsers } from '../../services/userService';
+import { exportReportExcel } from '../../services/reportService';
 import GeneratePayrollModal from '../../components/salary/GeneratePayrollModal';
 import EditSalaryModal from '../../components/salary/EditSalaryModal';
 import Badge from '../../components/common/Badge';
@@ -150,9 +151,31 @@ const PayrollPage = () => {
           <h1 className="page-title">Payroll & Compensation Engine</h1>
           <p className="page-subtitle">Multi-model salary engine (Fixed Monthly, Task Payment & Hybrid formula calculations)</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-          <DollarSign size={18} /> Generate Monthly Payroll
-        </button>
+        <div className="flex-row" style={{ gap: '10px' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={async () => {
+              try {
+                const res = await exportReportExcel('salary', { month, year });
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `Salary_Report_${month}_${year}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                addToast('Payroll Excel Report exported successfully!', 'success');
+              } catch (e) {
+                addToast('Failed to export Excel', 'danger');
+              }
+            }}
+          >
+            <FileSpreadsheet size={16} /> Export Excel
+          </button>
+          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+            <DollarSign size={18} /> Generate Monthly Payroll
+          </button>
+        </div>
       </div>
 
       <div className="search-filter-panel">

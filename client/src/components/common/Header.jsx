@@ -1,12 +1,12 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Sun, Moon, Bell, LogOut, Globe } from 'lucide-react';
+import { Sun, Moon, Bell, LogOut, Globe, Menu } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
 import { LanguageContext } from '../../context/LanguageContext';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 
-const Header = () => {
+const Header = ({ onToggleMobileSidebar }) => {
   const { user, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { language, toggleLanguage } = useContext(LanguageContext);
@@ -35,12 +35,33 @@ const Header = () => {
   return (
     <header className="header">
       <div className="flex-row">
-        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+        {/* Mobile / Tablet Menu Hamburger Button */}
+        <button
+          onClick={onToggleMobileSidebar}
+          className="mobile-menu-btn"
+          style={{
+            background: 'var(--bg-input)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-main)',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          title="Toggle Navigation Menu"
+        >
+          <Menu size={20} />
+        </button>
+
+        <span className="header-title" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
           Pustak Market EMS Portal
         </span>
       </div>
 
-      <div className="flex-row" style={{ gap: '14px' }}>
+      <div className="flex-row" style={{ gap: '10px' }}>
         {/* Bilingual Language Switcher Button */}
         <button
           onClick={toggleLanguage}
@@ -48,18 +69,18 @@ const Header = () => {
             background: 'var(--bg-input)',
             border: '1px solid var(--primary)',
             color: 'var(--primary)',
-            padding: '6px 14px',
+            padding: '6px 12px',
             borderRadius: '10px',
             cursor: 'pointer',
             fontWeight: 700,
-            fontSize: '0.85rem',
+            fontSize: '0.8rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
           }}
           title="Switch Language (English / मराठी)"
         >
-          <Globe size={16} />
+          <Globe size={15} />
           {language === 'en' ? 'मराठी' : 'English'}
         </button>
 
@@ -70,8 +91,8 @@ const Header = () => {
             background: 'var(--bg-input)',
             border: '1px solid var(--border-color)',
             color: 'var(--text-main)',
-            width: '40px',
-            height: '40px',
+            width: '38px',
+            height: '38px',
             borderRadius: '10px',
             cursor: 'pointer',
             display: 'flex',
@@ -80,7 +101,7 @@ const Header = () => {
           }}
           title="Toggle Theme"
         >
-          {theme === 'dark' ? <Sun size={20} color="#F59E0B" /> : <Moon size={20} color="#6366F1" />}
+          {theme === 'dark' ? <Sun size={18} color="#F59E0B" /> : <Moon size={18} color="#6366F1" />}
         </button>
 
         {/* Notifications Button with Unread Badge */}
@@ -90,8 +111,8 @@ const Header = () => {
             background: 'var(--bg-input)',
             border: '1px solid var(--border-color)',
             color: 'var(--text-main)',
-            width: '40px',
-            height: '40px',
+            width: '38px',
+            height: '38px',
             borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
@@ -100,7 +121,7 @@ const Header = () => {
           }}
           title="Notifications"
         >
-          <Bell size={20} />
+          <Bell size={18} />
           {unreadCount > 0 && (
             <span
               style={{
@@ -134,11 +155,11 @@ const Header = () => {
               {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
             </div>
           )}
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.2' }}>
+          <div className="header-user-info" style={{ textAlign: 'left' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: '1.2' }}>
               {user?.fullName}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
               {user?.role} ({user?.department})
             </div>
           </div>
@@ -148,10 +169,10 @@ const Header = () => {
         <button
           onClick={logout}
           className="btn btn-secondary btn-sm"
-          style={{ padding: '8px 12px', color: 'var(--danger)' }}
+          style={{ padding: '6px 10px', color: 'var(--danger)' }}
           title="Logout"
         >
-          <LogOut size={16} /> Logout
+          <LogOut size={16} /> <span className="logout-text">Logout</span>
         </button>
       </div>
     </header>
