@@ -31,7 +31,7 @@ import AttendancePage from './pages/admin/AttendancePage';
 import PayrollPage from './pages/admin/PayrollPage';
 import AdvancePage from './pages/admin/AdvancePage';
 import ReportsPage from './pages/admin/ReportsPage';
-import NotificationsPage from './pages/admin/NotificationsPage';
+import NotificationsPage from './pages/NotificationsCenterPage';
 import SettingsPage from './pages/admin/SettingsPage';
 
 // Employee Pages

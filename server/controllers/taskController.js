@@ -10,6 +10,7 @@ const {
   sendTaskDeadlineChangedEmail,
   sendTaskCompletedEmail,
 } = require('../utils/emailService');
+const { createAndEmitNotification } = require('../utils/notificationEngine');
 const logAudit = require('../utils/auditLogger');
 
 // @desc    Get all tasks with filters & search
@@ -98,12 +99,16 @@ exports.createTask = async (req, res, next) => {
       for (const empId of req.body.assignedTo) {
         const emp = await User.findById(empId);
         if (emp) {
-          await Notification.create({
-            recipient: emp._id,
+          await createAndEmitNotification(req.app, {
+            userId: emp._id,
+            senderId: req.user.id,
             title: 'New Task Assigned',
             message: `You have been assigned to task '${task.taskTitle}' (${task.taskId}).`,
             type: 'Task',
-            link: `/employee/tasks`,
+            referenceId: task._id,
+            referenceModel: 'Task',
+            route: '/employee/tasks',
+            priority: task.priority === 'Urgent' || task.priority === 'High' ? 'High' : 'Medium',
           });
 
           sendTaskAssignedEmail(emp, task, req.user);

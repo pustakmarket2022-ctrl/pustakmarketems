@@ -5,6 +5,7 @@ import { ThemeContext } from '../../context/ThemeContext';
 import { LanguageContext } from '../../context/LanguageContext';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { initSocket } from '../../services/socketService';
 
 const Header = ({ onToggleMobileSidebar }) => {
   const { user, logout } = useContext(AuthContext);
@@ -14,21 +15,36 @@ const Header = ({ onToggleMobileSidebar }) => {
 
   const fetchUnreadCount = async () => {
     try {
-      const res = await api.get('/notifications');
-      if (res.data && res.data.data) {
-        const count = res.data.data.filter((n) => !n.read).length;
-        setUnreadCount(count);
+      const res = await api.get('/notifications', { params: { readStatus: 'unread', limit: 1 } });
+      if (res.data && res.data.unreadCount !== undefined) {
+        setUnreadCount(res.data.unreadCount);
       }
     } catch (e) {
-      // Ignore poll error
+      // Ignore error
     }
   };
 
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 15000);
-      return () => clearInterval(interval);
+      const userId = user._id || user.id;
+      const socket = initSocket(userId);
+
+      const handleNotification = (data) => {
+        if (data && data.unreadCount !== undefined) {
+          setUnreadCount(data.unreadCount);
+        } else {
+          fetchUnreadCount();
+        }
+      };
+
+      if (socket) {
+        socket.on('new_notification', handleNotification);
+      }
+
+      return () => {
+        if (socket) socket.off('new_notification', handleNotification);
+      };
     }
   }, [user]);
 

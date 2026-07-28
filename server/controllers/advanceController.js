@@ -2,6 +2,7 @@ const AdvanceRequest = require('../models/AdvanceRequest');
 const Notification = require('../models/Notification');
 const { generateAdvanceId } = require('../utils/idGenerators');
 const { sendAdvanceStatusEmail } = require('../utils/emailService');
+const { createAndEmitNotification } = require('../utils/notificationEngine');
 const logAudit = require('../utils/auditLogger');
 
 // @desc    Employee request advance salary
@@ -87,12 +88,16 @@ exports.reviewAdvance = async (req, res, next) => {
     await advance.save();
 
     // Trigger Notification & Email
-    await Notification.create({
-      recipient: advance.user._id,
-      title: `Advance Salary ${status}`,
+    await createAndEmitNotification(req.app, {
+      userId: advance.user._id,
+      senderId: req.user.id,
+      title: `Advance Salary Request ${status}`,
       message: `Your advance request of ₹${advance.amount} has been ${status}. Notes: ${reviewNotes || 'N/A'}`,
       type: 'Advance',
-      link: '/employee/salary',
+      referenceId: advance._id,
+      referenceModel: 'AdvanceRequest',
+      route: '/employee/salary',
+      priority: status === 'Approved' || status === 'Paid' ? 'High' : 'Medium',
     });
 
     sendAdvanceStatusEmail(advance.user, advance);

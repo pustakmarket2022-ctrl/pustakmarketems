@@ -3,6 +3,7 @@ const Attendance = require('../models/Attendance');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { sendLeaveStatusEmail } = require('../utils/emailService');
+const { createAndEmitNotification } = require('../utils/notificationEngine');
 const logAudit = require('../utils/auditLogger');
 
 // @desc    Apply for Leave
@@ -103,12 +104,16 @@ exports.reviewLeaveRequest = async (req, res, next) => {
     }
 
     // Send Notification
-    await Notification.create({
-      recipient: leave.user._id,
+    await createAndEmitNotification(req.app, {
+      userId: leave.user._id,
+      senderId: req.user.id,
       title: `Leave Request ${status}`,
       message: `Your ${leave.leaveType} leave request from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} was ${status.toLowerCase()}.`,
       type: 'Leave',
-      link: '/employee/attendance',
+      referenceId: leave._id,
+      referenceModel: 'LeaveRequest',
+      route: '/employee/attendance',
+      priority: status === 'Approved' ? 'Medium' : 'High',
     });
 
     // Send Email

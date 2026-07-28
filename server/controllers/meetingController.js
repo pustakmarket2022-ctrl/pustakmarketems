@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { generateMeetingId } = require('../utils/idGenerators');
 const { sendMeetingScheduledEmail } = require('../utils/emailService');
+const { createAndEmitNotification } = require('../utils/notificationEngine');
 const logAudit = require('../utils/auditLogger');
 
 // @desc    Admin Schedule Meeting
@@ -32,12 +33,16 @@ exports.createMeeting = async (req, res, next) => {
       for (const empId of assignedEmployees) {
         const emp = await User.findById(empId);
         if (emp) {
-          await Notification.create({
-            recipient: emp._id,
+          await createAndEmitNotification(req.app, {
+            userId: emp._id,
+            senderId: req.user.id,
             title: 'New Meeting Scheduled',
-            message: `You are invited to '${meeting.title}' on ${meeting.date} at ${meeting.time}.`,
+            message: `You are invited to '${meeting.title}' on ${meeting.date} at ${meeting.time}. Location: ${meeting.location}`,
             type: 'Meeting',
-            link: '/employee/meetings',
+            referenceId: meeting._id,
+            referenceModel: 'Meeting',
+            route: '/employee/meetings',
+            priority: 'High',
           });
 
           sendMeetingScheduledEmail(emp, meeting);
