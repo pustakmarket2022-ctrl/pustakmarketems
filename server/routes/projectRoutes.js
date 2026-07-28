@@ -7,8 +7,10 @@ const {
   updateProject,
   deleteProject,
   trackProject,
-  getProjectContributors,
   updateProjectProgress,
+  addProjectMilestone,
+  updateProjectMilestone,
+  deleteProjectMilestone,
 } = require('../controllers/projectController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -17,8 +19,13 @@ router.get('/track/:identifier', trackProject);
 
 router.use(protect);
 
-router.get('/:id/contributors', getProjectContributors);
 router.put('/:id/progress', updateProjectProgress);
+
+// Milestone routes
+router.post('/:id/milestones', authorize('Admin'), addProjectMilestone);
+router.route('/:id/milestones/:milestoneId')
+  .put(authorize('Admin'), updateProjectMilestone)
+  .delete(authorize('Admin'), deleteProjectMilestone);
 
 router
   .route('/')

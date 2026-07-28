@@ -29,3 +29,18 @@ export const getProjectContributors = async (id) => {
   const response = await api.get(`/projects/${id}/contributors`);
   return response.data;
 };
+
+export const addProjectMilestone = async (projectId, milestoneData) => {
+  const response = await api.post(`/projects/${projectId}/milestones`, milestoneData);
+  return response.data;
+};
+
+export const updateProjectMilestone = async (projectId, milestoneId, milestoneData) => {
+  const response = await api.put(`/projects/${projectId}/milestones/${milestoneId}`, milestoneData);
+  return response.data;
+};
+
+export const deleteProjectMilestone = async (projectId, milestoneId) => {
+  const response = await api.delete(`/projects/${projectId}/milestones/${milestoneId}`);
+  return response.data;
+};

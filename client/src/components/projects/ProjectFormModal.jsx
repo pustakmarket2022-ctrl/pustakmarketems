@@ -91,6 +91,17 @@ const ProjectFormModal = ({ isOpen, onClose, onSubmit, employees = [], initialDa
   };
 
   // Milestone Step Handlers
+  const handleMilestoneNameChange = (index, stepName) => {
+    setFormData((prev) => {
+      const updated = [...prev.milestones];
+      updated[index] = { ...updated[index], stepName };
+      return {
+        ...prev,
+        milestones: updated,
+      };
+    });
+  };
+
   const handleMilestoneStatusChange = (index, status) => {
     setFormData((prev) => {
       const updated = [...prev.milestones];
@@ -301,13 +312,20 @@ const ProjectFormModal = ({ isOpen, onClose, onSubmit, employees = [], initialDa
                   background: 'var(--bg-card)',
                   borderRadius: '8px',
                   border: '1px solid var(--border-color)',
+                  gap: '8px',
                 }}
               >
-                <div className="flex-row" style={{ gap: '10px', flex: 1 }}>
+                <div className="flex-row" style={{ gap: '8px', flex: 1 }}>
                   {m.status === 'Completed' && <CheckCircle2 size={18} color="var(--success)" />}
                   {m.status === 'In Progress' && <Clock size={18} color="var(--warning)" />}
                   {m.status === 'Pending' && <Circle size={18} color="var(--text-muted)" />}
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{m.stepName}</span>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ fontSize: '0.85rem', padding: '4px 8px', fontWeight: 600, flex: 1 }}
+                    value={m.stepName}
+                    onChange={(e) => handleMilestoneNameChange(idx, e.target.value)}
+                  />
                 </div>
 
                 <div className="flex-row" style={{ gap: '8px' }}>
@@ -324,6 +342,7 @@ const ProjectFormModal = ({ isOpen, onClose, onSubmit, employees = [], initialDa
 
                   <button
                     type="button"
+                    title="Delete Milestone Step"
                     style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}
                     onClick={() => handleRemoveMilestone(idx)}
                   >
