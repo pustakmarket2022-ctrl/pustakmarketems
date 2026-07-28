@@ -32,25 +32,13 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['Super Admin', 'Admin', 'Employee'],
+      enum: ['Admin', 'Employee'],
       default: 'Employee',
     },
     department: {
       type: String,
-      enum: [
-        'Editorial',
-        'Content Writing',
-        'Proofreading',
-        'Graphic Design',
-        'Marketing',
-        'Sales',
-        'Printing',
-        'Warehouse',
-        'Accounts',
-        'HR',
-        'IT',
-      ],
       required: true,
+      trim: true,
     },
     designation: {
       type: String,
@@ -85,6 +73,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['Active', 'Inactive', 'On Leave', 'Terminated'],
       default: 'Active',
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,

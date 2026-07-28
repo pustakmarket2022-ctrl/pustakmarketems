@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { CheckSquare, DollarSign, Clock, BookOpen, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CheckSquare, DollarSign, Clock, BookOpen, Award, CreditCard, Calendar } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import StatCard from '../../components/common/StatCard';
 import ClockInWidget from '../../components/common/ClockInWidget';
 import Badge from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import TodoWidget from '../../components/employee/TodoWidget';
 import { getTasks } from '../../services/taskService';
 import { getSalaries } from '../../services/salaryService';
+import { getBestEmployee } from '../../services/userService';
 
 const EmployeeDashboard = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [salaries, setSalaries] = useState([]);
+  const [bestEmp, setBestEmp] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,8 +24,10 @@ const EmployeeDashboard = () => {
       try {
         const tRes = await getTasks({ limit: 5 });
         const sRes = await getSalaries({ limit: 5 });
-        setTasks(tRes.data);
-        setSalaries(sRes.data);
+        const bRes = await getBestEmployee();
+        setTasks(tRes.data || []);
+        setSalaries(sRes.data || []);
+        setBestEmp(bRes.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -34,6 +41,7 @@ const EmployeeDashboard = () => {
 
   const pendingTasksCount = tasks.filter((t) => t.taskStatus !== 'Completed' && t.taskStatus !== 'Approved').length;
   const currentSalary = salaries[0] ? `₹${(salaries[0].totalEarnings || 0).toLocaleString('en-IN')}` : '₹0';
+  const bestEmpUser = bestEmp?.employee;
 
   return (
     <div className="page-container">
@@ -46,81 +54,65 @@ const EmployeeDashboard = () => {
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid-cards">
-        <StatCard
-          icon={CheckSquare}
-          title="Assigned Tasks"
-          value={tasks.length}
-          color="#6366F1"
-        />
-        <StatCard
-          icon={Clock}
-          title="Tasks In Progress"
-          value={pendingTasksCount}
-          color="#F59E0B"
-        />
-        <StatCard
-          icon={DollarSign}
-          title="Current Period Earnings"
-          value={currentSalary}
-          color="#10B981"
-        />
-        <StatCard
-          icon={BookOpen}
-          title="Department"
-          value={user?.department}
-          color="#0EA5E9"
-        />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '28px' }}>
-        {/* Daily Clock In Widget */}
-        <ClockInWidget />
-
-        {/* Compensation Summary Card */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      {/* Best Employee Highlight Banner */}
+      {bestEmpUser && (
+        <div
+          className="card"
+          style={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+            color: '#fff',
+            marginBottom: '24px',
+            padding: '20px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+          }}
+        >
+          <Award size={36} color="#fbbf24" />
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px' }}>Compensation Structure</h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Your active salary calculation model is <strong>{user?.salaryType}</strong>.
-            </p>
+            <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 800, color: '#fbbf24' }}>
+              BEST EMPLOYEE OF THE MONTH
+            </div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '2px' }}>
+              {bestEmpUser.fullName} ({bestEmpUser.designation} - {bestEmpUser.department})
+            </div>
+            <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+              {bestEmp.reason || 'Outstanding performance & dedication.'}
+            </div>
           </div>
+        </div>
+      )}
 
-          <div
-            style={{
-              padding: '16px',
-              background: 'var(--bg-input)',
-              borderRadius: '12px',
-              margin: '16px 0',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-            }}
-          >
-            {(user?.salaryType === 'Monthly' || user?.salaryType === 'Hybrid') && (
-              <div className="flex-row" style={{ justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Fixed Base Monthly Salary:</span>
-                <strong>₹{(user?.fixedSalary || 0).toLocaleString('en-IN')}</strong>
-              </div>
-            )}
-            {(user?.salaryType === 'Task Based' || user?.salaryType === 'Hybrid') && (
-              <div className="flex-row" style={{ justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Per Task Incentive Rate:</span>
-                <strong style={{ color: 'var(--success)' }}>₹{(user?.perTaskRate || 0).toLocaleString('en-IN')} / task</strong>
-              </div>
-            )}
-          </div>
-
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            * Task payments are released immediately after Admin review & approval.
-          </div>
+      {/* Clickable Stats Overview */}
+      <div className="grid-cards" style={{ marginBottom: '24px' }}>
+        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/employee/tasks')}>
+          <StatCard icon={CheckSquare} title="Assigned Tasks" value={tasks.length} color="#6366F1" />
+        </div>
+        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/employee/tasks')}>
+          <StatCard icon={Clock} title="Tasks In Progress" value={pendingTasksCount} color="#F59E0B" />
+        </div>
+        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/employee/salary')}>
+          <StatCard icon={DollarSign} title="Current Period Earnings" value={currentSalary} color="#10B981" />
+        </div>
+        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/employee/advances')}>
+          <StatCard icon={CreditCard} title="My Advances" value="View / Request" color="#0EA5E9" />
         </div>
       </div>
 
-      {/* Active Tasks Widget */}
+      {/* Clock In & Todo Widget Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '28px' }}>
+        <ClockInWidget />
+        <TodoWidget />
+      </div>
+
+      {/* Active Tasks Table */}
       <div className="card">
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px' }}>My Active Tasks</h3>
+        <div className="flex-row" style={{ justifyContent: 'space-between', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>My Active Tasks</h3>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => navigate('/employee/tasks')}>
+            View All Tasks
+          </button>
+        </div>
         <div className="table-container">
           <table className="data-table">
             <thead>
@@ -143,18 +135,12 @@ const EmployeeDashboard = () => {
               ) : (
                 tasks.map((t) => (
                   <tr key={t._id}>
-                    <td>
-                      <strong style={{ color: 'var(--primary)' }}>{t.taskId}</strong>
-                    </td>
+                    <td><strong style={{ color: 'var(--primary)' }}>{t.taskId}</strong></td>
                     <td>{t.taskTitle}</td>
                     <td>{t.project?.bookName}</td>
-                    <td>
-                      <strong style={{ color: 'var(--success)' }}>₹{(t.taskPaymentAmount || 0).toLocaleString('en-IN')}</strong>
-                    </td>
+                    <td><strong style={{ color: 'var(--success)' }}>₹{(t.taskPaymentAmount || 0).toLocaleString('en-IN')}</strong></td>
                     <td>{new Date(t.deadline).toLocaleDateString()}</td>
-                    <td>
-                      <Badge text={t.taskStatus} />
-                    </td>
+                    <td><Badge text={t.taskStatus} /></td>
                   </tr>
                 ))
               )}

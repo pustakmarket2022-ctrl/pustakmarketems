@@ -29,6 +29,7 @@ import ProjectsPage from './pages/admin/ProjectsPage';
 import TasksPage from './pages/admin/TasksPage';
 import AttendancePage from './pages/admin/AttendancePage';
 import PayrollPage from './pages/admin/PayrollPage';
+import AdvancePage from './pages/admin/AdvancePage';
 import ReportsPage from './pages/admin/ReportsPage';
 import NotificationsPage from './pages/admin/NotificationsPage';
 import SettingsPage from './pages/admin/SettingsPage';
@@ -38,7 +39,12 @@ import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import MyTasksPage from './pages/employee/MyTasksPage';
 import MyAttendancePage from './pages/employee/MyAttendancePage';
 import MySalaryPage from './pages/employee/MySalaryPage';
+import MyAdvancePage from './pages/employee/MyAdvancePage';
 import MyProfilePage from './pages/employee/MyProfilePage';
+
+// Shared Feature Modules
+import MeetingsPage from './pages/MeetingsPage';
+import GroupDiscussionPage from './pages/GroupDiscussionPage';
 
 // Public Landing & Tracking Pages
 import LandingPage from './pages/public/LandingPage';
@@ -97,6 +103,9 @@ function App() {
                   <Route path="/admin/tasks" element={<TasksPage />} />
                   <Route path="/admin/attendance" element={<AttendancePage />} />
                   <Route path="/admin/payroll" element={<PayrollPage />} />
+                  <Route path="/admin/advances" element={<AdvancePage />} />
+                  <Route path="/admin/meetings" element={<MeetingsPage />} />
+                  <Route path="/admin/discussion" element={<GroupDiscussionPage />} />
                   <Route path="/admin/reports" element={<ReportsPage />} />
                   <Route path="/admin/notifications" element={<NotificationsPage />} />
                   <Route path="/admin/settings" element={<SettingsPage />} />
@@ -106,6 +115,9 @@ function App() {
                   <Route path="/employee/tasks" element={<MyTasksPage />} />
                   <Route path="/employee/attendance" element={<MyAttendancePage />} />
                   <Route path="/employee/salary" element={<MySalaryPage />} />
+                  <Route path="/employee/advances" element={<MyAdvancePage />} />
+                  <Route path="/employee/meetings" element={<MeetingsPage />} />
+                  <Route path="/employee/discussion" element={<GroupDiscussionPage />} />
                   <Route path="/employee/notifications" element={<NotificationsPage />} />
                   <Route path="/employee/profile" element={<MyProfilePage />} />
                 </Route>

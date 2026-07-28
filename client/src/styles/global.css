@@ -116,10 +116,33 @@ button, input, select, textarea {
 }
 
 @media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
   .page-container {
-    padding: 16px;
+    padding: 16px 12px;
+  }
+  .header {
+    padding: 0 16px;
+  }
+  .grid-cards {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
   }
   .grid-charts {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  .search-filter-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .modal-content {
+    max-height: 95vh;
   }
 }

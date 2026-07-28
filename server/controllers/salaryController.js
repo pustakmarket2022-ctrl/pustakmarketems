@@ -2,46 +2,63 @@ const Salary = require('../models/Salary');
 const User = require('../models/User');
 const Task = require('../models/Task');
 const Payment = require('../models/Payment');
+const AdvanceRequest = require('../models/AdvanceRequest');
+const Overtime = require('../models/Overtime');
 const Notification = require('../models/Notification');
 const { generateSalaryId } = require('../utils/idGenerators');
 const { generateSalarySlipPDF } = require('../utils/pdfGenerator');
+const { sendSalarySlipGeneratedEmail } = require('../utils/emailService');
+const logAudit = require('../utils/auditLogger');
 
 // @desc    Generate Payroll for Month & Year
 // @route   POST /api/salaries/generate
-// @access  Private (Admin / Super Admin)
+// @access  Private (Admin / Super Admin / HR)
 exports.generatePayroll = async (req, res, next) => {
   try {
-    const { month, year, userId, advanceSalary } = req.body; // If userId provided, generate for 1 user, else for all Active employees
+    const { month, year, userId, advanceSalary, bonus: manualBonus, penalty: manualPenalty } = req.body;
 
-    const query = { status: 'Active' };
+    const query = { isDeleted: { $ne: true }, status: 'Active' };
     if (userId) query._id = userId;
 
     const employees = await User.find(query);
     const generatedSalaries = [];
 
     for (const emp of employees) {
-      // Calculate approved task payments for this month/year or unpaid approved tasks
-      const startOfMonth = new Date(year, month - 1, 1);
-      const endOfMonth = new Date(year, month, 0, 23, 59, 59);
-
-      // Find unpaid approved task payments for this employee
+      // 1. Task Incentive
       const approvedPayments = await Payment.find({
         user: emp._id,
         status: 'Unpaid',
       });
-
       const taskIncentive = approvedPayments.reduce((sum, p) => sum + p.amount, 0);
 
+      // 2. Fixed Base Salary
       let fixedSalary = 0;
       if (emp.salaryType === 'Monthly' || emp.salaryType === 'Hybrid') {
         fixedSalary = emp.fixedSalary || 0;
       }
 
-      // Formula: Final Salary = Fixed Salary + Task Incentive + Bonus - Penalty - Advance Salary
-      const bonus = 0;
-      const penalty = 0;
-      const advDeduction = Number(advanceSalary || 0);
-      const totalEarnings = Math.max(0, fixedSalary + taskIncentive + bonus - penalty - advDeduction);
+      // 3. Approved Overtime Amount in this Month/Year
+      const approvedOvertimes = await Overtime.find({
+        user: emp._id,
+        status: 'Approved',
+      });
+      const overtimeHours = approvedOvertimes.reduce((sum, o) => sum + (o.hours || 0), 0);
+      const overtimeAmount = approvedOvertimes.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+      // 4. Approved Advance Deduction
+      const approvedAdvances = await AdvanceRequest.find({
+        user: emp._id,
+        status: { $in: ['Approved', 'Paid'] },
+      });
+      const autoAdvDeduction = approvedAdvances.reduce((sum, a) => sum + a.amount, 0);
+      const advDeduction = advanceSalary !== undefined ? Number(advanceSalary) : autoAdvDeduction;
+
+      // 5. Bonus & Penalty
+      const bonus = manualBonus !== undefined ? Number(manualBonus) : 0;
+      const penalty = manualPenalty !== undefined ? Number(manualPenalty) : 0;
+
+      // Formula: Final Salary = Fixed + Task + Bonus + Overtime - Penalty - Advance
+      const totalEarnings = Math.max(0, fixedSalary + taskIncentive + bonus + overtimeAmount - penalty - advDeduction);
 
       const salaryId = await generateSalaryId();
 
@@ -56,6 +73,8 @@ exports.generatePayroll = async (req, res, next) => {
           fixedSalary,
           taskIncentive,
           bonus,
+          overtimeHours,
+          overtimeAmount,
           penalty,
           advanceSalary: advDeduction,
           totalEarnings,
@@ -66,15 +85,24 @@ exports.generatePayroll = async (req, res, next) => {
 
       generatedSalaries.push(salary);
 
-      // Send notification
+      // Send notification & email
       await Notification.create({
         recipient: emp._id,
         title: 'Monthly Salary Statement Generated',
-        message: `Your payroll for ${month}/${year} has been generated ($${totalEarnings.toFixed(2)}).`,
+        message: `Your payroll for ${month}/${year} has been generated (₹${totalEarnings.toFixed(2)}).`,
         type: 'Salary',
         link: '/employee/salary',
       });
+
+      sendSalarySlipGeneratedEmail(emp, salary);
     }
+
+    logAudit({
+      user: req.user.id,
+      action: 'Payroll Generated',
+      details: `Generated payroll for ${generatedSalaries.length} employee(s) for ${month}/${year}`,
+      req,
+    });
 
     res.status(200).json({
       success: true,
@@ -107,7 +135,7 @@ exports.getSalaries = async (req, res, next) => {
     const skip = (page - 1) * limit;
     const total = await Salary.countDocuments(query);
     const data = await Salary.find(query)
-      .populate('user', 'fullName employeeId department designation profileImage email salaryType')
+      .populate('user', 'fullName employeeId department designation profileImage email salaryType fixedSalary perTaskRate')
       .sort({ year: -1, month: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -127,10 +155,10 @@ exports.getSalaries = async (req, res, next) => {
 
 // @desc    Update Salary record (Adjust bonus, penalty, mark paid)
 // @route   PUT /api/salaries/:id
-// @access  Private (Admin / Super Admin)
+// @access  Private (Admin / Super Admin / HR)
 exports.updateSalary = async (req, res, next) => {
   try {
-    const { bonus, penalty, advanceSalary, status, remarks } = req.body;
+    const { bonus, penalty, advanceSalary, overtimeAmount, status, remarks } = req.body;
     const salary = await Salary.findById(req.params.id).populate('user');
 
     if (!salary) {
@@ -140,12 +168,17 @@ exports.updateSalary = async (req, res, next) => {
     if (bonus !== undefined) salary.bonus = Number(bonus);
     if (penalty !== undefined) salary.penalty = Number(penalty);
     if (advanceSalary !== undefined) salary.advanceSalary = Number(advanceSalary);
+    if (overtimeAmount !== undefined) salary.overtimeAmount = Number(overtimeAmount);
     if (remarks !== undefined) salary.remarks = remarks;
 
-    // Recalculate total earnings
     salary.totalEarnings = Math.max(
       0,
-      (salary.fixedSalary || 0) + (salary.taskIncentive || 0) + (salary.bonus || 0) - (salary.penalty || 0) - (salary.advanceSalary || 0)
+      (salary.fixedSalary || 0) +
+        (salary.taskIncentive || 0) +
+        (salary.bonus || 0) +
+        (salary.overtimeAmount || 0) -
+        (salary.penalty || 0) -
+        (salary.advanceSalary || 0)
     );
 
     if (status && status !== salary.status) {
@@ -153,7 +186,6 @@ exports.updateSalary = async (req, res, next) => {
       if (status === 'Paid') {
         salary.paymentDate = new Date();
 
-        // Mark associated task payments as 'Paid'
         await Payment.updateMany(
           { user: salary.user._id, status: 'Unpaid' },
           { status: 'Paid', paymentDate: new Date() }
@@ -162,7 +194,7 @@ exports.updateSalary = async (req, res, next) => {
         await Notification.create({
           recipient: salary.user._id,
           title: 'Salary Disbursed',
-          message: `Your salary of $${salary.totalEarnings.toFixed(2)} for ${salary.month}/${salary.year} has been paid.`,
+          message: `Your salary of ₹${salary.totalEarnings.toFixed(2)} for ${salary.month}/${salary.year} has been paid.`,
           type: 'Salary',
           link: '/employee/salary',
         });
@@ -170,6 +202,13 @@ exports.updateSalary = async (req, res, next) => {
     }
 
     await salary.save();
+
+    logAudit({
+      user: req.user.id,
+      action: 'Salary Record Updated',
+      details: `Updated salary ${salary.salaryId} for ${salary.user.fullName}`,
+      req,
+    });
 
     res.status(200).json({ success: true, data: salary });
   } catch (err) {
@@ -188,7 +227,6 @@ exports.downloadSalarySlip = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Salary record not found' });
     }
 
-    // Check ownership if user is employee
     if (req.user.role === 'Employee' && salary.user._id.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized to access this salary slip' });
     }

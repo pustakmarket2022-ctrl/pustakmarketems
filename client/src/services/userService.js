@@ -25,6 +25,26 @@ export const deleteUser = async (id) => {
   return response.data;
 };
 
+export const restoreUser = async (id) => {
+  const response = await api.put(`/users/${id}/restore`);
+  return response.data;
+};
+
+export const selectBestEmployee = async (data) => {
+  const response = await api.post('/users/best-employee', data);
+  return response.data;
+};
+
+export const getBestEmployee = async (params) => {
+  const response = await api.get('/users/best-employee', { params });
+  return response.data;
+};
+
+export const getAuditLogs = async (params) => {
+  const response = await api.get('/users/audit-logs', { params });
+  return response.data;
+};
+
 export const getDashboardStats = async () => {
   const response = await api.get('/users/dashboard-stats');
   return response.data;

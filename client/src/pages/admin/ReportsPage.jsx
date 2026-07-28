@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { FileSpreadsheet, Download, Users, Clock, CheckSquare, DollarSign } from 'lucide-react';
+import { FileSpreadsheet, Download, Users, Clock, CheckSquare, DollarSign, CreditCard, Calendar } from 'lucide-react';
 import { exportReportExcel } from '../../services/reportService';
 import { NotificationContext } from '../../context/NotificationContext';
 
@@ -54,10 +54,26 @@ const ReportsPage = () => {
     {
       type: 'salary',
       title: 'Monthly Salary & Payroll Disbursal Report',
-      description: 'Export detailed payroll summary including fixed salary, task incentives, bonus, penalties, and net payouts.',
+      description: 'Export detailed payroll summary including fixed salary, task incentives, bonus, penalties, advance deductions, and net payouts.',
       icon: DollarSign,
       color: '#8B5CF6',
       filename: 'PustakMarket_Salary_Report',
+    },
+    {
+      type: 'advance',
+      title: 'Advance Salary Requests & Deductions Report',
+      description: 'Export all advance salary requests, amounts, reasons, approval statuses, and deduction schedules.',
+      icon: CreditCard,
+      color: '#F59E0B',
+      filename: 'PustakMarket_Advance_Report',
+    },
+    {
+      type: 'overtime',
+      title: 'Employee Overtime Hours & Payouts Report',
+      description: 'Export overtime hours requested, approved rates, and total calculated overtime earnings.',
+      icon: Calendar,
+      color: '#EC4899',
+      filename: 'PustakMarket_Overtime_Report',
     },
   ];
 
@@ -66,11 +82,11 @@ const ReportsPage = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Enterprise System Reports & Exports</h1>
-          <p className="page-subtitle">Download audit logs, payroll summaries, and project analytics in Excel format</p>
+          <p className="page-subtitle">Download audit logs, payroll summaries, advance requests, and project analytics in Excel format</p>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
         {reportCards.map((card) => {
           const Icon = card.icon;
           return (

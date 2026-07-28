@@ -1,6 +1,9 @@
 const LeaveRequest = require('../models/LeaveRequest');
 const Attendance = require('../models/Attendance');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
+const { sendLeaveStatusEmail } = require('../utils/emailService');
+const logAudit = require('../utils/auditLogger');
 
 // @desc    Apply for Leave
 // @route   POST /api/leaves
@@ -28,7 +31,9 @@ exports.applyLeave = async (req, res, next) => {
       reason,
     });
 
-    res.status(201).json({ success: true, data: leave });
+    logAudit({ user: req.user.id, action: 'Leave Applied', details: `${leaveType} leave for ${totalDays} days`, req });
+
+    res.status(201).json({ success: true, message: 'Leave request submitted successfully', data: leave });
   } catch (err) {
     next(err);
   }
@@ -52,8 +57,8 @@ exports.getLeaveRequests = async (req, res, next) => {
     }
 
     const leaves = await LeaveRequest.find(query)
-      .populate('user', 'fullName employeeId department designation profileImage')
-      .populate('reviewedBy', 'fullName')
+      .populate('user', 'fullName employeeId department designation profileImage email')
+      .populate('reviewedBy', 'fullName role')
       .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, count: leaves.length, data: leaves });
@@ -64,11 +69,11 @@ exports.getLeaveRequests = async (req, res, next) => {
 
 // @desc    Review Leave Request (Approve / Reject)
 // @route   PUT /api/leaves/:id/review
-// @access  Private (Admin / Super Admin)
+// @access  Private (Admin / Super Admin / HR)
 exports.reviewLeaveRequest = async (req, res, next) => {
   try {
     const { status, reviewNotes } = req.body; // status: 'Approved' | 'Rejected'
-    const leave = await LeaveRequest.findById(req.params.id);
+    const leave = await LeaveRequest.findById(req.params.id).populate('user');
 
     if (!leave) {
       return res.status(404).json({ success: false, message: 'Leave request not found' });
@@ -89,8 +94,8 @@ exports.reviewLeaveRequest = async (req, res, next) => {
       while (curr <= end) {
         const dateStr = curr.toISOString().split('T')[0];
         await Attendance.findOneAndUpdate(
-          { user: leave.user, date: dateStr },
-          { user: leave.user, date: dateStr, status: 'Leave', notes: `Leave: ${leave.leaveType}` },
+          { user: leave.user._id, date: dateStr },
+          { user: leave.user._id, date: dateStr, status: 'Leave', notes: `Leave: ${leave.leaveType}` },
           { upsert: true, new: true }
         );
         curr.setDate(curr.getDate() + 1);
@@ -99,11 +104,21 @@ exports.reviewLeaveRequest = async (req, res, next) => {
 
     // Send Notification
     await Notification.create({
-      recipient: leave.user,
+      recipient: leave.user._id,
       title: `Leave Request ${status}`,
       message: `Your ${leave.leaveType} leave request from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()} was ${status.toLowerCase()}.`,
       type: 'Leave',
       link: '/employee/attendance',
+    });
+
+    // Send Email
+    sendLeaveStatusEmail(leave.user, leave);
+
+    logAudit({
+      user: req.user.id,
+      action: `Leave ${status}`,
+      details: `${leave.leaveType} leave for ${leave.user.fullName} marked as ${status}`,
+      req,
     });
 
     res.status(200).json({ success: true, message: `Leave request ${status}`, data: leave });

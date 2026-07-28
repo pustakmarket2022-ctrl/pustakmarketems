@@ -1,13 +1,21 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { cloudinary } = require('../utils/cloudinaryService');
+let CloudinaryStorage;
+try {
+  CloudinaryStorage = require('multer-storage-cloudinary').CloudinaryStorage;
+} catch (e) {
+  CloudinaryStorage = null;
+}
 
 const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
+// Local disk storage engine
+const localStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadsDir);
   },
@@ -17,6 +25,19 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + '-' + uniqueSuffix + ext);
   },
 });
+
+// Cloudinary storage engine if credentials exist
+let storage = localStorage;
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && CloudinaryStorage) {
+  storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'pustak_market_ems',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'zip'],
+      resource_type: 'auto',
+    },
+  });
+}
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|zip/;

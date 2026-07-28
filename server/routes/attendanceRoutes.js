@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   checkIn,
   checkOut,
+  editAttendance,
   getAttendance,
   getMyAttendance,
 } = require('../controllers/attendanceController');
@@ -13,6 +14,7 @@ router.use(protect);
 router.post('/check-in', checkIn);
 router.post('/check-out', checkOut);
 router.get('/my', getMyAttendance);
-router.get('/', authorize('Admin', 'Super Admin'), getAttendance);
+router.put('/:id/edit', authorize('Admin'), editAttendance);
+router.get('/', authorize('Admin'), getAttendance);
 
 module.exports = router;

@@ -20,6 +20,11 @@ export const updateTask = async (id, taskData) => {
   return response.data;
 };
 
+export const updateTaskStatus = async (id, statusData) => {
+  const response = await api.put(`/tasks/${id}/status`, statusData);
+  return response.data;
+};
+
 export const deleteTask = async (id) => {
   const response = await api.delete(`/tasks/${id}`);
   return response.data;

@@ -1,16 +1,18 @@
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const Task = require('../models/Task');
-const Project = require('../models/Project');
 const Salary = require('../models/Salary');
+const AdvanceRequest = require('../models/AdvanceRequest');
+const Overtime = require('../models/Overtime');
+const LeaveRequest = require('../models/LeaveRequest');
 const { exportToExcel } = require('../utils/excelGenerator');
 
 // @desc    Export Employees Report to Excel
 // @route   GET /api/reports/employees/excel
-// @access  Private (Admin / Super Admin)
+// @access  Private (Admin / Super Admin / HR)
 exports.exportEmployeesReport = async (req, res, next) => {
   try {
-    const employees = await User.find().sort({ createdAt: -1 });
+    const employees = await User.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 });
 
     const columns = [
       { header: 'Employee ID', key: 'employeeId', width: 15 },
@@ -48,12 +50,13 @@ exports.exportEmployeesReport = async (req, res, next) => {
 
 // @desc    Export Attendance Report to Excel
 // @route   GET /api/reports/attendance/excel
-// @access  Private (Admin / Super Admin)
+// @access  Private (Admin / Super Admin / HR)
 exports.exportAttendanceReport = async (req, res, next) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, user } = req.query;
     const query = {};
 
+    if (user) query.user = user;
     if (startDate && endDate) {
       query.date = { $gte: startDate, $lte: endDate };
     }
@@ -94,10 +97,14 @@ exports.exportAttendanceReport = async (req, res, next) => {
 
 // @desc    Export Tasks Report to Excel
 // @route   GET /api/reports/tasks/excel
-// @access  Private (Admin / Super Admin)
+// @access  Private (Admin / Super Admin / HR)
 exports.exportTasksReport = async (req, res, next) => {
   try {
-    const tasks = await Task.find()
+    const { user } = req.query;
+    const query = {};
+    if (user) query.assignedTo = user;
+
+    const tasks = await Task.find(query)
       .populate('project', 'projectName bookName projectId')
       .populate('assignedTo', 'fullName employeeId')
       .sort({ createdAt: -1 });
@@ -140,10 +147,16 @@ exports.exportTasksReport = async (req, res, next) => {
 
 // @desc    Export Salary Report to Excel
 // @route   GET /api/reports/salary/excel
-// @access  Private (Admin / Super Admin)
+// @access  Private (Admin / Super Admin / HR)
 exports.exportSalaryReport = async (req, res, next) => {
   try {
-    const salaries = await Salary.find()
+    const { month, year, user } = req.query;
+    const query = {};
+    if (user) query.user = user;
+    if (month) query.month = parseInt(month);
+    if (year) query.year = parseInt(year);
+
+    const salaries = await Salary.find(query)
       .populate('user', 'fullName employeeId department salaryType')
       .sort({ year: -1, month: -1 });
 
@@ -156,7 +169,9 @@ exports.exportSalaryReport = async (req, res, next) => {
       { header: 'Salary Type', key: 'salaryType', width: 15 },
       { header: 'Fixed Base (₹)', key: 'fixedSalary', width: 18 },
       { header: 'Task Incentive (₹)', key: 'taskIncentive', width: 18 },
+      { header: 'Overtime (₹)', key: 'overtimeAmount', width: 18 },
       { header: 'Bonus (₹)', key: 'bonus', width: 15 },
+      { header: 'Advance Deduction (₹)', key: 'advanceSalary', width: 20 },
       { header: 'Penalty (₹)', key: 'penalty', width: 15 },
       { header: 'Total Net (₹)', key: 'totalEarnings', width: 18 },
       { header: 'Status', key: 'status', width: 15 },
@@ -171,13 +186,103 @@ exports.exportSalaryReport = async (req, res, next) => {
       salaryType: s.salaryType,
       fixedSalary: s.fixedSalary || 0,
       taskIncentive: s.taskIncentive || 0,
+      overtimeAmount: s.overtimeAmount || 0,
       bonus: s.bonus || 0,
+      advanceSalary: s.advanceSalary || 0,
       penalty: s.penalty || 0,
       totalEarnings: s.totalEarnings || 0,
       status: s.status,
     }));
 
     await exportToExcel(res, 'Salary', columns, data, 'Salary_Report');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Export Advance Report to Excel
+// @route   GET /api/reports/advance/excel
+// @access  Private (Admin / Super Admin / HR)
+exports.exportAdvanceReport = async (req, res, next) => {
+  try {
+    const { user, status } = req.query;
+    const query = {};
+    if (user) query.user = user;
+    if (status) query.status = status;
+
+    const advances = await AdvanceRequest.find(query)
+      .populate('user', 'fullName employeeId department')
+      .populate('reviewedBy', 'fullName')
+      .sort({ createdAt: -1 });
+
+    const columns = [
+      { header: 'Advance ID', key: 'advanceId', width: 15 },
+      { header: 'Employee ID', key: 'employeeId', width: 15 },
+      { header: 'Employee Name', key: 'fullName', width: 25 },
+      { header: 'Department', key: 'department', width: 20 },
+      { header: 'Requested Amount (₹)', key: 'amount', width: 20 },
+      { header: 'Reason', key: 'reason', width: 30 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Reviewed By', key: 'reviewedBy', width: 20 },
+    ];
+
+    const data = advances.map((a) => ({
+      advanceId: a.advanceId,
+      employeeId: a.user ? a.user.employeeId : 'N/A',
+      fullName: a.user ? a.user.fullName : 'N/A',
+      department: a.user ? a.user.department : 'N/A',
+      amount: a.amount,
+      reason: a.reason,
+      status: a.status,
+      reviewedBy: a.reviewedBy ? a.reviewedBy.fullName : '-',
+    }));
+
+    await exportToExcel(res, 'Advance_Requests', columns, data, 'Advance_Report');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Export Overtime Report to Excel
+// @route   GET /api/reports/overtime/excel
+// @access  Private (Admin / Super Admin / HR)
+exports.exportOvertimeReport = async (req, res, next) => {
+  try {
+    const { user, status } = req.query;
+    const query = {};
+    if (user) query.user = user;
+    if (status) query.status = status;
+
+    const overtimes = await Overtime.find(query)
+      .populate('user', 'fullName employeeId department')
+      .populate('reviewedBy', 'fullName')
+      .sort({ createdAt: -1 });
+
+    const columns = [
+      { header: 'Overtime ID', key: 'overtimeId', width: 15 },
+      { header: 'Employee ID', key: 'employeeId', width: 15 },
+      { header: 'Employee Name', key: 'fullName', width: 25 },
+      { header: 'Department', key: 'department', width: 20 },
+      { header: 'Date', key: 'date', width: 15 },
+      { header: 'Hours', key: 'hours', width: 12 },
+      { header: 'Hourly Rate (₹)', key: 'hourlyRate', width: 18 },
+      { header: 'Total Amount (₹)', key: 'totalAmount', width: 18 },
+      { header: 'Status', key: 'status', width: 15 },
+    ];
+
+    const data = overtimes.map((o) => ({
+      overtimeId: o.overtimeId,
+      employeeId: o.user ? o.user.employeeId : 'N/A',
+      fullName: o.user ? o.user.fullName : 'N/A',
+      department: o.user ? o.user.department : 'N/A',
+      date: o.date,
+      hours: o.hours,
+      hourlyRate: o.hourlyRate || 0,
+      totalAmount: o.totalAmount || 0,
+      status: o.status,
+    }));
+
+    await exportToExcel(res, 'Overtime', columns, data, 'Overtime_Report');
   } catch (err) {
     next(err);
   }

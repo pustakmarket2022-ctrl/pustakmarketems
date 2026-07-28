@@ -29,7 +29,6 @@ if (process.env.NODE_ENV === 'development') {
 // Serve Static Uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Route Files
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes');
@@ -39,6 +38,12 @@ const leaveRoutes = require('./routes/leaveRoutes');
 const salaryRoutes = require('./routes/salaryRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const advanceRoutes = require('./routes/advanceRoutes');
+const overtimeRoutes = require('./routes/overtimeRoutes');
+const meetingRoutes = require('./routes/meetingRoutes');
+const todoRoutes = require('./routes/todoRoutes');
+const groupRoutes = require('./routes/groupRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
 
 // Mount Routers
 app.use('/api/auth', authRoutes);
@@ -50,6 +55,12 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/salaries', salaryRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/advances', advanceRoutes);
+app.use('/api/overtime', overtimeRoutes);
+app.use('/api/meetings', meetingRoutes);
+app.use('/api/todos', todoRoutes);
+app.use('/api/groups', groupRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {

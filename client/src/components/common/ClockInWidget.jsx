@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { LogIn, LogOut, Clock, CheckCircle2 } from 'lucide-react';
+import { LogIn, LogOut, Clock, CheckCircle2, MapPin } from 'lucide-react';
 import { checkIn, checkOut, getMyAttendance } from '../../services/attendanceService';
 import { NotificationContext } from '../../context/NotificationContext';
 
@@ -7,6 +7,7 @@ const ClockInWidget = () => {
   const { addToast } = useContext(NotificationContext);
   const [todayData, setTodayData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [clocking, setClocking] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const fetchAttendance = async () => {
@@ -26,23 +27,48 @@ const ClockInWidget = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const getCoordinates = () => {
+    return new Promise((resolve) => {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+          (err) => {
+            console.warn('Geolocation denied or unavailable:', err.message);
+            resolve({ latitude: null, longitude: null });
+          },
+          { timeout: 8000 }
+        );
+      } else {
+        resolve({ latitude: null, longitude: null });
+      }
+    });
+  };
+
   const handleCheckIn = async () => {
+    setClocking(true);
     try {
-      const res = await checkIn();
+      const coords = await getCoordinates();
+      const res = await checkIn(coords);
       addToast(res.message, 'success');
       fetchAttendance();
     } catch (err) {
       addToast(err.response?.data?.message || 'Check-in failed', 'danger');
+    } finally {
+      setClocking(false);
     }
   };
 
   const handleCheckOut = async () => {
+    setClocking(true);
     try {
-      const res = await checkOut();
+      const coords = await getCoordinates();
+      const res = await checkOut(coords);
       addToast(res.message, 'success');
       fetchAttendance();
     } catch (err) {
       addToast(err.response?.data?.message || 'Check-out failed', 'danger');
+    } finally {
+      setClocking(false);
     }
   };
 
@@ -50,9 +76,9 @@ const ClockInWidget = () => {
     <div className="card" style={{ background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-sidebar) 100%)' }}>
       <div className="flex-row" style={{ justifyContent: 'space-between', marginBottom: '16px' }}>
         <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Attendance Time Tracker</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Office Geofence Attendance Tracker</h3>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Daily Work Clock-in & Working Hours Logging
+            Office Radius Verified Clock-in & Hours Logging
           </p>
         </div>
         <div
@@ -104,19 +130,24 @@ const ClockInWidget = () => {
 
       <div className="flex-row" style={{ gap: '12px' }}>
         {!todayData?.checkIn ? (
-          <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCheckIn}>
-            <LogIn size={18} /> Clock In Now
+          <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCheckIn} disabled={clocking}>
+            <MapPin size={18} /> {clocking ? 'Verifying Office Location...' : 'Check In (Office Radius)'}
           </button>
         ) : !todayData?.checkOut ? (
-          <button className="btn btn-secondary" style={{ flex: 1, borderColor: 'var(--warning)', color: 'var(--warning)' }} onClick={handleCheckOut}>
-            <LogOut size={18} /> Clock Out Now
+          <button
+            className="btn btn-secondary"
+            style={{ flex: 1, borderColor: 'var(--warning)', color: 'var(--warning)' }}
+            onClick={handleCheckOut}
+            disabled={clocking}
+          >
+            <LogOut size={18} /> {clocking ? 'Verifying Location...' : 'Check Out'}
           </button>
         ) : (
           <div
             className="flex-row"
             style={{
               flex: 1,
-              justify: 'center',
+              justifyContent: 'center',
               padding: '10px',
               background: 'var(--success-bg)',
               color: 'var(--success)',
@@ -124,7 +155,7 @@ const ClockInWidget = () => {
               fontWeight: 700,
             }}
           >
-            <CheckCircle2 size={18} /> Shift Logged For Today
+            <CheckCircle2 size={18} /> Shift Logged For Today ({todayData.status})
           </div>
         )}
       </div>

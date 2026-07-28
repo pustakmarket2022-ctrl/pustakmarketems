@@ -94,10 +94,79 @@ const generatePaymentId = async () => {
   return candidateId;
 };
 
+const AdvanceRequest = require('../models/AdvanceRequest');
+const Overtime = require('../models/Overtime');
+const Meeting = require('../models/Meeting');
+const Group = require('../models/Group');
+
+const generateAdvanceId = async () => {
+  const currentYear = new Date().getFullYear();
+  const prefix = `ADV-${currentYear}-`;
+  const count = await AdvanceRequest.countDocuments();
+  let nextSeq = count + 1;
+  let candidateId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+  let exists = await AdvanceRequest.findOne({ advanceId: candidateId });
+  while (exists) {
+    nextSeq++;
+    candidateId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+    exists = await AdvanceRequest.findOne({ advanceId: candidateId });
+  }
+  return candidateId;
+};
+
+const generateOvertimeId = async () => {
+  const currentYear = new Date().getFullYear();
+  const prefix = `OVT-${currentYear}-`;
+  const count = await Overtime.countDocuments();
+  let nextSeq = count + 1;
+  let candidateId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+  let exists = await Overtime.findOne({ overtimeId: candidateId });
+  while (exists) {
+    nextSeq++;
+    candidateId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+    exists = await Overtime.findOne({ overtimeId: candidateId });
+  }
+  return candidateId;
+};
+
+const generateMeetingId = async () => {
+  const currentYear = new Date().getFullYear();
+  const prefix = `MTG-${currentYear}-`;
+  const count = await Meeting.countDocuments();
+  let nextSeq = count + 1;
+  let candidateId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+  let exists = await Meeting.findOne({ meetingId: candidateId });
+  while (exists) {
+    nextSeq++;
+    candidateId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+    exists = await Meeting.findOne({ meetingId: candidateId });
+  }
+  return candidateId;
+};
+
+const generateGroupId = async () => {
+  const currentYear = new Date().getFullYear();
+  const prefix = `GRP-${currentYear}-`;
+  const count = await Group.countDocuments();
+  let nextSeq = count + 1;
+  let candidateId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+  let exists = await Group.findOne({ groupId: candidateId });
+  while (exists) {
+    nextSeq++;
+    candidateId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+    exists = await Group.findOne({ groupId: candidateId });
+  }
+  return candidateId;
+};
+
 module.exports = {
   generateEmployeeId,
   generateProjectId,
   generateTaskId,
   generateSalaryId,
   generatePaymentId,
+  generateAdvanceId,
+  generateOvertimeId,
+  generateMeetingId,
+  generateGroupId,
 };

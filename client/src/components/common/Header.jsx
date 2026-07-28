@@ -1,14 +1,36 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Sun, Moon, Bell, LogOut, Globe } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
 import { LanguageContext } from '../../context/LanguageContext';
 import { Link } from 'react-router-dom';
+import api from '../../services/api';
 
 const Header = () => {
   const { user, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useContext(ThemeContext);
-  const { language, toggleLanguage, t } = useContext(LanguageContext);
+  const { language, toggleLanguage } = useContext(LanguageContext);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await api.get('/notifications');
+      if (res.data && res.data.data) {
+        const count = res.data.data.filter((n) => !n.read).length;
+        setUnreadCount(count);
+      }
+    } catch (e) {
+      // Ignore poll error
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   return (
     <header className="header">
@@ -61,7 +83,7 @@ const Header = () => {
           {theme === 'dark' ? <Sun size={20} color="#F59E0B" /> : <Moon size={20} color="#6366F1" />}
         </button>
 
-        {/* Notifications Button */}
+        {/* Notifications Button with Unread Badge */}
         <Link
           to={user?.role === 'Employee' ? '/employee/notifications' : '/admin/notifications'}
           style={{
@@ -79,6 +101,28 @@ const Header = () => {
           title="Notifications"
         >
           <Bell size={20} />
+          {unreadCount > 0 && (
+            <span
+              style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                background: '#ef4444',
+                color: '#fff',
+                borderRadius: '50%',
+                fontSize: '0.7rem',
+                fontWeight: 'bold',
+                width: '18px',
+                height: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)',
+              }}
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </Link>
 
         {/* User Info Badge & Avatar */}

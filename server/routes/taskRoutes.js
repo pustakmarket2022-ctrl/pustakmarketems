@@ -8,6 +8,7 @@ const {
   deleteTask,
   submitTask,
   reviewTask,
+  updateTaskStatus,
   addComment,
 } = require('../controllers/taskController');
 const { protect, authorize } = require('../middleware/authMiddleware');
@@ -18,16 +19,17 @@ router.use(protect);
 router
   .route('/')
   .get(getTasks)
-  .post(authorize('Admin', 'Super Admin'), createTask);
+  .post(authorize('Admin'), createTask);
 
 router
   .route('/:id')
   .get(getTaskById)
-  .put(authorize('Admin', 'Super Admin'), updateTask)
-  .delete(authorize('Admin', 'Super Admin'), deleteTask);
+  .put(authorize('Admin'), updateTask)
+  .delete(authorize('Admin'), deleteTask);
 
+router.put('/:id/status', updateTaskStatus);
 router.put('/:id/submit', upload.array('attachments', 5), submitTask);
-router.put('/:id/review', authorize('Admin', 'Super Admin'), reviewTask);
+router.put('/:id/review', authorize('Admin'), reviewTask);
 router.post('/:id/comments', addComment);
 
 module.exports = router;

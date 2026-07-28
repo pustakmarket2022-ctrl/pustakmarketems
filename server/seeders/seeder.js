@@ -48,7 +48,7 @@ const seedData = async () => {
       email: 'superadmin@pustakmarket.com',
       password: 'password123',
       phone: '+91 98765 00001',
-      role: 'Super Admin',
+      role: 'Admin',
       department: 'HR',
       designation: 'Managing Director',
       salaryType: 'Monthly',

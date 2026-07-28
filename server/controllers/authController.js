@@ -1,7 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const sendEmail = require('../utils/emailService');
+const { sendPasswordResetEmail } = require('../utils/emailService');
+const { getUploadedFileInfo } = require('../utils/cloudinaryService');
 
 // Helper to generate JWT token
 const sendTokenResponse = (user, statusCode, res) => {
@@ -83,23 +84,12 @@ exports.forgotPassword = async (req, res, next) => {
 
     await user.save({ validateBeforeSave: false });
 
-    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
-    const message = `You are receiving this email because a password reset request was submitted. Please click the link to reset your password:\n\n${resetUrl}`;
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-    const sent = await sendEmail({
-      email: user.email,
-      subject: 'Pustak Market EMS - Password Reset Request',
-      message,
-    });
+    await sendPasswordResetEmail(user, resetUrl);
 
-    if (sent) {
-      res.status(200).json({ success: true, message: 'Email sent successfully' });
-    } else {
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpire = undefined;
-      await user.save({ validateBeforeSave: false });
-      res.status(500).json({ success: false, message: 'Email could not be sent' });
-    }
+    res.status(200).json({ success: true, message: 'Password reset email sent' });
   } catch (err) {
     next(err);
   }
@@ -168,7 +158,8 @@ exports.updateProfile = async (req, res, next) => {
     };
 
     if (req.file) {
-      fieldsToUpdate.profileImage = `/uploads/${req.file.filename}`;
+      const fileInfo = getUploadedFileInfo(req.file);
+      fieldsToUpdate.profileImage = fileInfo.path;
     }
 
     const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {

@@ -26,10 +26,23 @@ const attendanceSchema = new mongoose.Schema(
       enum: ['Present', 'Absent', 'Late', 'Half Day', 'Leave'],
       default: 'Present',
     },
-    notes: {
-      type: String,
-      default: '',
-    },
+    checkInLat: { type: Number, default: null },
+    checkInLng: { type: Number, default: null },
+    checkOutLat: { type: Number, default: null },
+    checkOutLng: { type: Number, default: null },
+    editHistory: [
+      {
+        editedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        editDate: { type: Date, default: Date.now },
+        previousStatus: String,
+        newStatus: String,
+        previousCheckIn: Date,
+        newCheckIn: Date,
+        previousCheckOut: Date,
+        newCheckOut: Date,
+        reason: String,
+      },
+    ],
   },
   { timestamps: true }
 );

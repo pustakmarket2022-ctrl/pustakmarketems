@@ -12,6 +12,9 @@ import {
   Settings,
   BookMarked,
   User,
+  CreditCard,
+  Calendar,
+  MessageSquare,
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { LanguageContext } from '../../context/LanguageContext';
@@ -19,27 +22,33 @@ import { LanguageContext } from '../../context/LanguageContext';
 const Sidebar = () => {
   const { user } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
-  const isAdmin = user?.role === 'Admin' || user?.role === 'Super Admin';
+  const isAdmin = user?.role === 'Admin';
 
   const adminNav = [
-    { label: t('dashboard'), path: '/admin/dashboard', icon: LayoutDashboard },
-    { label: t('employees'), path: '/admin/employees', icon: Users },
-    { label: t('projects'), path: '/admin/projects', icon: BookOpen },
-    { label: t('tasks'), path: '/admin/tasks', icon: CheckSquare },
-    { label: t('attendance'), path: '/admin/attendance', icon: Clock },
-    { label: t('payroll'), path: '/admin/payroll', icon: DollarSign },
-    { label: t('reports'), path: '/admin/reports', icon: FileBarChart2 },
-    { label: t('notifications'), path: '/admin/notifications', icon: Bell },
-    { label: t('settings'), path: '/admin/settings', icon: Settings },
+    { label: t('dashboard') || 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+    { label: t('employees') || 'Employees', path: '/admin/employees', icon: Users },
+    { label: t('projects') || 'Projects', path: '/admin/projects', icon: BookOpen },
+    { label: t('tasks') || 'Tasks', path: '/admin/tasks', icon: CheckSquare },
+    { label: t('attendance') || 'Attendance', path: '/admin/attendance', icon: Clock },
+    { label: t('payroll') || 'Payroll', path: '/admin/payroll', icon: DollarSign },
+    { label: 'Advances', path: '/admin/advances', icon: CreditCard },
+    { label: 'Meetings', path: '/admin/meetings', icon: Calendar },
+    { label: 'Discussions', path: '/admin/discussion', icon: MessageSquare },
+    { label: t('reports') || 'Reports', path: '/admin/reports', icon: FileBarChart2 },
+    { label: t('notifications') || 'Notifications', path: '/admin/notifications', icon: Bell },
+    { label: t('settings') || 'Settings', path: '/admin/settings', icon: Settings },
   ];
 
   const employeeNav = [
-    { label: t('dashboard'), path: '/employee/dashboard', icon: LayoutDashboard },
-    { label: t('myTasks'), path: '/employee/tasks', icon: CheckSquare },
-    { label: t('myAttendance'), path: '/employee/attendance', icon: Clock },
-    { label: t('mySalary'), path: '/employee/salary', icon: DollarSign },
-    { label: t('notifications'), path: '/employee/notifications', icon: Bell },
-    { label: t('myProfile'), path: '/employee/profile', icon: User },
+    { label: t('dashboard') || 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
+    { label: t('myTasks') || 'My Tasks', path: '/employee/tasks', icon: CheckSquare },
+    { label: t('myAttendance') || 'My Attendance', path: '/employee/attendance', icon: Clock },
+    { label: t('mySalary') || 'My Salary', path: '/employee/salary', icon: DollarSign },
+    { label: 'My Advances', path: '/employee/advances', icon: CreditCard },
+    { label: 'Meetings', path: '/employee/meetings', icon: Calendar },
+    { label: 'Discussions', path: '/employee/discussion', icon: MessageSquare },
+    { label: t('notifications') || 'Notifications', path: '/employee/notifications', icon: Bell },
+    { label: t('myProfile') || 'My Profile', path: '/employee/profile', icon: User },
   ];
 
   const navItems = isAdmin ? adminNav : employeeNav;
@@ -94,7 +103,7 @@ const Sidebar = () => {
           }}
         >
           <div style={{ fontWeight: 700, color: 'var(--primary)' }}>Book Publishing EMS</div>
-          <div>v1.0.0 (Production)</div>
+          <div>v2.0.0 (Enterprise)</div>
         </div>
       </div>
     </aside>
