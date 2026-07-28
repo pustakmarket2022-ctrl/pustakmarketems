@@ -228,20 +228,34 @@ const AdminDashboard = () => {
         }}
       >
         <div className="flex-row" style={{ gap: '16px' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              background: '#ffffff22',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid #ffffff44',
-            }}
-          >
-            <Award size={32} color="#fff" />
-          </div>
+          {bestEmp?.profileImage ? (
+            <img
+              src={bestEmp.profileImage}
+              alt={bestEmp.fullName}
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid #ffffff',
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: '#ffffff22',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid #ffffff44',
+              }}
+            >
+              <Award size={32} color="#fff" />
+            </div>
+          )}
           <div>
             <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 800, opacity: 0.9 }}>
               ⭐ BEST EMPLOYEE OF THE MONTH ⭐
@@ -297,6 +311,22 @@ const AdminDashboard = () => {
             title="Pending Advances"
             value={`${cards.pendingAdvancesCount || 0} (₹${(cards.pendingAdvancesTotal || 0).toLocaleString()})`}
             color="#F59E0B"
+          />
+        </div>
+        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/advances')}>
+          <StatCard
+            icon={CreditCard}
+            title="Approved Advances"
+            value={`₹${(cards.approvedAdvancesTotal || 0).toLocaleString()}`}
+            color="#10B981"
+          />
+        </div>
+        <div style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/advances')}>
+          <StatCard
+            icon={CreditCard}
+            title="Paid Advances"
+            value={`₹${(cards.paidAdvancesTotal || 0).toLocaleString()}`}
+            color="#0EA5E9"
           />
         </div>
         <div style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/payroll')}>

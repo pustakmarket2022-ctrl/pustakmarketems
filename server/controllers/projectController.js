@@ -210,5 +210,27 @@ exports.getProjectContributors = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+// @desc    Employee / Admin Update Project Progress & Completion Percentage
+// @route   PUT /api/projects/:id/progress
+// @access  Private
+exports.updateProjectProgress = async (req, res, next) => {
+  try {
+    const { completionPercentage, status, milestones } = req.body;
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (completionPercentage !== undefined) project.completionPercentage = Number(completionPercentage);
+    if (status) project.status = status;
+    if (milestones) project.milestones = milestones;
+
+    await project.save();
+
+    res.status(200).json({ success: true, message: 'Project progress updated successfully', data: project });
+  } catch (err) {
+    next(err);
+  }
 };
 

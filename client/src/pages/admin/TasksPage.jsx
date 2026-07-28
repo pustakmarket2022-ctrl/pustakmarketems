@@ -128,7 +128,9 @@ const TasksPage = () => {
     }
   };
 
-  const getFileUrl = (filePath) => {
+  const getFileUrl = (att) => {
+    if (!att) return '#';
+    const filePath = typeof att === 'string' ? att : (att.filePath || att.path || att.url || '');
     if (!filePath) return '#';
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
     const backendUrl = process.env.REACT_APP_API_URL
@@ -259,20 +261,23 @@ const TasksPage = () => {
                     <td>
                       {taskItem.attachments && taskItem.attachments.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {taskItem.attachments.map((att, idx) => (
-                            <a
-                              key={idx}
-                              href={getFileUrl(att.filePath)}
-                              download={att.fileName}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="btn btn-secondary btn-sm"
-                              style={{ padding: '4px 10px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                              title={`Download ${att.fileName}`}
-                            >
-                              <Download size={13} color="var(--primary)" /> Download File
-                            </a>
-                          ))}
+                          {taskItem.attachments.map((att, idx) => {
+                            const fileName = typeof att === 'string' ? att.split('/').pop() : (att.fileName || 'Attachment');
+                            return (
+                              <a
+                                key={idx}
+                                href={getFileUrl(att)}
+                                download={fileName}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '4px 10px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                title={`Download ${fileName}`}
+                              >
+                                <Download size={13} color="var(--primary)" /> {fileName.length > 15 ? `${fileName.substring(0, 15)}...` : fileName}
+                              </a>
+                            );
+                          })}
                         </div>
                       ) : (
                         <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>No File Uploaded</span>

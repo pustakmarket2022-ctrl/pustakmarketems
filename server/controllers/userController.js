@@ -334,6 +334,18 @@ exports.getDashboardStats = async (req, res, next) => {
     ]);
     const pendingAdvancesTotal = pendingAdvanceAgg.length > 0 ? pendingAdvanceAgg[0].total : 0;
 
+    const approvedAdvanceAgg = await AdvanceRequest.aggregate([
+      { $match: { status: 'Approved' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } },
+    ]);
+    const approvedAdvancesTotal = approvedAdvanceAgg.length > 0 ? approvedAdvanceAgg[0].total : 0;
+
+    const paidAdvanceAgg = await AdvanceRequest.aggregate([
+      { $match: { status: 'Paid' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } },
+    ]);
+    const paidAdvancesTotal = paidAdvanceAgg.length > 0 ? paidAdvanceAgg[0].total : 0;
+
     const pendingOvertimeCount = await Overtime.countDocuments({ status: 'Pending' });
 
     // Today's attendance count
@@ -401,6 +413,8 @@ exports.getDashboardStats = async (req, res, next) => {
         pendingLeaves,
         pendingAdvancesCount,
         pendingAdvancesTotal,
+        approvedAdvancesTotal,
+        paidAdvancesTotal,
         pendingOvertimeCount,
         attendanceToday,
         monthlySalaryExpense,

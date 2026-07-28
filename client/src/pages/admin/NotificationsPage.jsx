@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Bell, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, CheckCircle, ExternalLink } from 'lucide-react';
 import api from '../../services/api';
 import Badge from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { NotificationContext } from '../../context/NotificationContext';
 
 const NotificationsPage = () => {
+  const navigate = useNavigate();
   const { addToast } = useContext(NotificationContext);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,21 @@ const NotificationsPage = () => {
     fetchNotifications();
   }, []);
 
+  const handleNotificationClick = async (n) => {
+    try {
+      if (!n.read) {
+        await api.put(`/notifications/${n._id}/read`);
+      }
+      if (n.link) {
+        navigate(n.link);
+      } else {
+        fetchNotifications();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleMarkAllRead = async () => {
     try {
       await api.put('/notifications/read-all');
@@ -40,7 +57,7 @@ const NotificationsPage = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Notifications Center</h1>
-          <p className="page-subtitle">System broadcasts, task updates, and payroll alerts</p>
+          <p className="page-subtitle">Real-time system broadcasts, task updates, meetings, & payroll alerts</p>
         </div>
         <button className="btn btn-secondary" onClick={handleMarkAllRead}>
           <CheckCircle size={16} /> Mark All as Read
@@ -59,6 +76,7 @@ const NotificationsPage = () => {
             notifications.map((n) => (
               <div
                 key={n._id}
+                onClick={() => handleNotificationClick(n)}
                 style={{
                   padding: '18px 24px',
                   borderBottom: '1px solid var(--border-color)',
@@ -67,6 +85,8 @@ const NotificationsPage = () => {
                   alignItems: 'flex-start',
                   justifyContent: 'space-between',
                   gap: '16px',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease',
                 }}
               >
                 <div className="flex-row" style={{ gap: '14px', alignItems: 'flex-start' }}>
@@ -86,7 +106,10 @@ const NotificationsPage = () => {
                     <Bell size={18} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{n.title}</div>
+                    <div className="flex-row" style={{ gap: '8px' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{n.title}</div>
+                      {n.link && <ExternalLink size={14} color="var(--primary)" />}
+                    </div>
                     <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                       {n.message}
                     </div>

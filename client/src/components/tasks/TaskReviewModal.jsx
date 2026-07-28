@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import Badge from '../common/Badge';
+import NotesWidget from '../common/NotesWidget';
 import { Download, FileText, CheckCircle2, XCircle } from 'lucide-react';
 
 const TaskReviewModal = ({ isOpen, onClose, onReview, task }) => {
@@ -12,7 +13,9 @@ const TaskReviewModal = ({ isOpen, onClose, onReview, task }) => {
     onReview(task._id, { action, reviewNotes });
   };
 
-  const getFileUrl = (filePath) => {
+  const getFileUrl = (att) => {
+    if (!att) return '#';
+    const filePath = typeof att === 'string' ? att : (att.filePath || att.path || att.url || '');
     if (!filePath) return '#';
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       return filePath;
@@ -65,7 +68,8 @@ const TaskReviewModal = ({ isOpen, onClose, onReview, task }) => {
           {task.attachments && task.attachments.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {task.attachments.map((att, idx) => {
-                const fullDownloadUrl = getFileUrl(att.filePath);
+                const fullDownloadUrl = getFileUrl(att);
+                const fileName = typeof att === 'string' ? att.split('/').pop() : (att.fileName || `Deliverable_${idx + 1}`);
                 return (
                   <div
                     key={idx}
@@ -84,7 +88,7 @@ const TaskReviewModal = ({ isOpen, onClose, onReview, task }) => {
                       <FileText size={20} color="var(--primary)" />
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-                          {att.fileName}
+                          {fileName}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           Uploaded on {new Date(att.uploadedAt || Date.now()).toLocaleDateString()}
@@ -94,7 +98,7 @@ const TaskReviewModal = ({ isOpen, onClose, onReview, task }) => {
 
                     <a
                       href={fullDownloadUrl}
-                      download={att.fileName}
+                      download={fileName}
                       target="_blank"
                       rel="noreferrer"
                       className="btn btn-primary btn-sm"
@@ -123,6 +127,9 @@ const TaskReviewModal = ({ isOpen, onClose, onReview, task }) => {
             onChange={(e) => setReviewNotes(e.target.value)}
           />
         </div>
+
+        {/* Notes & Annotations Widget for Task */}
+        <NotesWidget entityType="Task" entityId={task._id} entityName={task.taskTitle} />
 
         <div className="modal-footer" style={{ padding: '16px 0 0 0', justifyContent: 'space-between' }}>
           <button

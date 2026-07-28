@@ -1,8 +1,22 @@
-import React, { useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Printer, Download, BookMarked, CheckCircle2 } from 'lucide-react';
+import api from '../../services/api';
 
 const SalarySlipModal = ({ salary, onClose }) => {
   const printRef = useRef(null);
+  const [completedTasks, setCompletedTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
+  useEffect(() => {
+    if (salary && salary.user) {
+      const empId = salary.user._id || salary.user;
+      setLoadingTasks(true);
+      api.get('/tasks', { params: { assignedTo: empId, taskStatus: 'Approved', limit: 100 } })
+        .then((res) => setCompletedTasks(res.data?.data || []))
+        .catch(() => {})
+        .finally(() => setLoadingTasks(false));
+    }
+  }, [salary]);
 
   if (!salary) return null;
 
@@ -45,7 +59,7 @@ const SalarySlipModal = ({ salary, onClose }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '750px', width: '100%', padding: '0', overflow: 'hidden' }}>
+      <div className="modal-content" style={{ maxWidth: '800px', width: '100%', padding: '0', overflow: 'hidden' }}>
         {/* Header toolbar */}
         <div
           style={{
@@ -57,7 +71,7 @@ const SalarySlipModal = ({ salary, onClose }) => {
             justifyContent: 'space-between',
           }}
         >
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Salary Slip Statement</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Official Employee Salary Slip Statement</h3>
           <div className="flex-row" style={{ gap: '10px' }}>
             <button type="button" className="btn btn-primary btn-sm" onClick={handlePrint}>
               <Printer size={16} /> Print Salary Slip
@@ -78,7 +92,7 @@ const SalarySlipModal = ({ salary, onClose }) => {
               alignItems: 'flex-start',
               borderBottom: '2px solid #2563eb',
               paddingBottom: '16px',
-              marginBottom: '24px',
+              marginBottom: '20px',
             }}
           >
             <div>
@@ -86,13 +100,13 @@ const SalarySlipModal = ({ salary, onClose }) => {
                 <BookMarked size={26} /> PUSTAK MARKET
               </div>
               <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '2px' }}>
-                Book Publication & Distribution House
+                Book Publication & Distribution Enterprise
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>PAYSLIP</h2>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>PAYSLIP STATEMENT</h2>
               <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                Period: {monthLabel} {salary.year}
+                Pay Period: {monthLabel} {salary.year}
               </span>
               <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2563eb', marginTop: '2px' }}>
                 Ref ID: {salary.salaryId}
@@ -105,7 +119,7 @@ const SalarySlipModal = ({ salary, onClose }) => {
             style={{
               width: '100%',
               borderCollapse: 'collapse',
-              marginBottom: '24px',
+              marginBottom: '20px',
               border: '1px solid #e2e8f0',
               borderRadius: '6px',
             }}
@@ -137,7 +151,7 @@ const SalarySlipModal = ({ salary, onClose }) => {
               </tr>
               <tr style={{ background: '#f8fafc' }}>
                 <td style={{ padding: '8px 12px', fontWeight: 700, fontSize: '0.85rem', color: '#475569' }}>
-                  Salary Type:
+                  Salary Model:
                 </td>
                 <td style={{ padding: '8px 12px', fontSize: '0.9rem' }}>{salary.salaryType}</td>
                 <td style={{ padding: '8px 12px', fontWeight: 700, fontSize: '0.85rem', color: '#475569' }}>
@@ -150,34 +164,65 @@ const SalarySlipModal = ({ salary, onClose }) => {
             </tbody>
           </table>
 
+          {/* Completed Work / Tasks Table */}
+          {completedTasks.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle2 size={16} color="#16a34a" /> Completed Tasks Deliverables Breakdown:
+              </h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.825rem', border: '1px solid #e2e8f0' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', color: '#475569', textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Task ID</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Task Title</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Publication Project</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'right', border: '1px solid #e2e8f0' }}>Amount (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {completedTasks.map((t) => (
+                    <tr key={t._id}>
+                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0', fontWeight: 600, color: '#2563eb' }}>{t.taskId}</td>
+                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0' }}>{t.taskTitle}</td>
+                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0' }}>{t.project?.bookName || 'General'}</td>
+                      <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 600, color: '#16a34a' }}>
+                        ₹{(t.taskPaymentAmount || 0).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           {/* Detailed Earnings vs Deductions Breakdown */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
             {/* Earnings */}
             <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', paddingBottom: '6px', borderBottom: '2px solid #22c55e', marginBottom: '10px' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', paddingBottom: '4px', borderBottom: '2px solid #22c55e', marginBottom: '8px' }}>
                 EARNINGS (+)
               </h4>
               <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
                 <tbody>
                   <tr>
-                    <td style={{ padding: '6px 0', color: '#475569' }}>Basic Salary:</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.fixedSalary || 0).toLocaleString()}</td>
+                    <td style={{ padding: '5px 0', color: '#475569' }}>Fixed Base Salary:</td>
+                    <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.fixedSalary || 0).toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '6px 0', color: '#475569' }}>Task Incentives:</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.taskIncentive || 0).toLocaleString()}</td>
+                    <td style={{ padding: '5px 0', color: '#475569' }}>Task Incentives:</td>
+                    <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.taskIncentive || 0).toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '6px 0', color: '#475569' }}>Overtime ({salary.overtimeHours || 0} hrs):</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.overtimeAmount || 0).toLocaleString()}</td>
+                    <td style={{ padding: '5px 0', color: '#475569' }}>Overtime ({salary.overtimeHours || 0} hrs):</td>
+                    <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.overtimeAmount || 0).toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '6px 0', color: '#475569' }}>Performance Bonus:</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.bonus || 0).toLocaleString()}</td>
+                    <td style={{ padding: '5px 0', color: '#475569' }}>Performance Bonus:</td>
+                    <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.bonus || 0).toLocaleString()}</td>
                   </tr>
                   <tr style={{ borderTop: '1px solid #cbd5e1', fontWeight: 700 }}>
-                    <td style={{ padding: '8px 0', color: '#16a34a' }}>Total Gross Earnings:</td>
-                    <td style={{ padding: '8px 0', textAlign: 'right', color: '#16a34a' }}>
+                    <td style={{ padding: '6px 0', color: '#16a34a' }}>Gross Earnings:</td>
+                    <td style={{ padding: '6px 0', textAlign: 'right', color: '#16a34a' }}>
                       ₹{((salary.fixedSalary || 0) + (salary.taskIncentive || 0) + (salary.overtimeAmount || 0) + (salary.bonus || 0)).toLocaleString()}
                     </td>
                   </tr>
@@ -187,22 +232,22 @@ const SalarySlipModal = ({ salary, onClose }) => {
 
             {/* Deductions */}
             <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', paddingBottom: '6px', borderBottom: '2px solid #ef4444', marginBottom: '10px' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', paddingBottom: '4px', borderBottom: '2px solid #ef4444', marginBottom: '8px' }}>
                 DEDUCTIONS (-)
               </h4>
               <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
                 <tbody>
                   <tr>
-                    <td style={{ padding: '6px 0', color: '#475569' }}>Advance Deduction:</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.advanceSalary || 0).toLocaleString()}</td>
+                    <td style={{ padding: '5px 0', color: '#475569' }}>Advance Salary Deduction:</td>
+                    <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.advanceSalary || 0).toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '6px 0', color: '#475569' }}>Penalty / Fine:</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.penalty || 0).toLocaleString()}</td>
+                    <td style={{ padding: '5px 0', color: '#475569' }}>Penalty / Fine:</td>
+                    <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 600 }}>₹{(salary.penalty || 0).toLocaleString()}</td>
                   </tr>
                   <tr style={{ borderTop: '1px solid #cbd5e1', fontWeight: 700 }}>
-                    <td style={{ padding: '8px 0', color: '#dc2626' }}>Total Deductions:</td>
-                    <td style={{ padding: '8px 0', textAlign: 'right', color: '#dc2626' }}>
+                    <td style={{ padding: '6px 0', color: '#dc2626' }}>Total Deductions:</td>
+                    <td style={{ padding: '6px 0', textAlign: 'right', color: '#dc2626' }}>
                       ₹{((salary.advanceSalary || 0) + (salary.penalty || 0)).toLocaleString()}
                     </td>
                   </tr>
@@ -214,14 +259,14 @@ const SalarySlipModal = ({ salary, onClose }) => {
           {/* Final Net Pay Box */}
           <div
             style={{
-              padding: '16px 20px',
+              padding: '14px 18px',
               background: '#f0f9ff',
               border: '2px dashed #0284c7',
               borderRadius: '8px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '30px',
+              marginBottom: '24px',
             }}
           >
             <div>
@@ -229,7 +274,7 @@ const SalarySlipModal = ({ salary, onClose }) => {
                 FINAL NET SALARY PAYABLE
               </div>
               <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-                Formula: (Basic + Task + Overtime + Bonus) - (Advance + Penalty)
+                Formula: (Fixed + Tasks + Overtime + Bonus) - (Advance + Penalty)
               </div>
             </div>
             <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0369a1' }}>
@@ -238,17 +283,17 @@ const SalarySlipModal = ({ salary, onClose }) => {
           </div>
 
           {/* Signatures */}
-          <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748b' }}>
+          <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748b' }}>
             <div>
-              <div style={{ height: '40px' }}></div>
-              <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '4px', textAlign: 'center', minWidth: '150px' }}>
+              <div style={{ height: '35px' }}></div>
+              <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '4px', textAlign: 'center', minWidth: '140px' }}>
                 Employee Signature
               </div>
             </div>
             <div>
-              <div style={{ height: '40px' }}></div>
-              <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '4px', textAlign: 'center', minWidth: '150px' }}>
-                Authorized HR / Accounts
+              <div style={{ height: '35px' }}></div>
+              <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '4px', textAlign: 'center', minWidth: '140px' }}>
+                Authorized Admin / HR
               </div>
             </div>
           </div>

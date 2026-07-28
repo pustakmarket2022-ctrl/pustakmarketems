@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { CheckSquare, Upload, MessageSquare } from 'lucide-react';
-import { getTasks, submitTask, addComment } from '../../services/taskService';
+import { getTasks, submitTask, addComment, updateTaskStatus } from '../../services/taskService';
 import TaskSubmitModal from '../../components/tasks/TaskSubmitModal';
 import Badge from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -101,6 +101,49 @@ const MyTasksPage = () => {
                   </div>
                 </div>
 
+                {/* Task Completion Progress Bar */}
+                <div>
+                  <div className="flex-row" style={{ justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Work Progress:</span>
+                    <strong style={{ color: 'var(--primary)' }}>{t.progressPercentage || 0}% Completed</strong>
+                  </div>
+                  <div className="progress-bar-bg" style={{ height: '8px' }}>
+                    <div className="progress-bar-fill" style={{ width: `${t.progressPercentage || 0}%` }} />
+                  </div>
+
+                  {/* Quick Percentage Presets */}
+                  {t.taskStatus !== 'Approved' && t.taskStatus !== 'Submitted' && (
+                    <div className="flex-row" style={{ gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Set Progress:</span>
+                      {[10, 25, 50, 75, 100].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            padding: '2px 8px',
+                            fontSize: '0.75rem',
+                            fontWeight: t.progressPercentage === pct ? 800 : 500,
+                            background: t.progressPercentage === pct ? 'var(--primary-light)' : 'var(--bg-input)',
+                            color: t.progressPercentage === pct ? 'var(--primary)' : 'var(--text-main)',
+                          }}
+                          onClick={async () => {
+                            try {
+                              await updateTaskStatus(t._id, { progressPercentage: pct, taskStatus: pct === 100 ? 'Submitted' : 'In Progress' });
+                              addToast(`Task progress updated to ${pct}%`, 'success');
+                              fetchTasks();
+                            } catch (err) {
+                              addToast('Failed to update progress', 'danger');
+                            }
+                          }}
+                        >
+                          {pct}%
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Submit Action */}
                 <div style={{ marginTop: 'auto', paddingTop: '10px' }}>
                   {t.taskStatus === 'Approved' ? (
@@ -137,7 +180,7 @@ const MyTasksPage = () => {
                       style={{ width: '100%' }}
                       onClick={() => handleOpenSubmit(t)}
                     >
-                      <Upload size={16} /> Submit Deliverable / Files
+                      <Upload size={16} /> Submit Deliverable / Upload Files
                     </button>
                   )}
                 </div>

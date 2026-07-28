@@ -4,6 +4,7 @@ import { getMeetings, createMeeting } from '../services/meetingService';
 import { getUsers } from '../services/userService';
 import { AuthContext } from '../context/AuthContext';
 import { NotificationContext } from '../context/NotificationContext';
+import NotesWidget from '../components/common/NotesWidget';
 
 const MeetingsPage = () => {
   const [meetings, setMeetings] = useState([]);
@@ -144,6 +145,9 @@ const MeetingsPage = () => {
                 <div>Organizer: <strong>{mtg.createdBy?.fullName || 'Admin'}</strong></div>
                 <div>Assigned Attendees: <strong>{mtg.assignedEmployees?.length || 0} Member(s)</strong></div>
               </div>
+
+              {/* Notes Widget for Meeting */}
+              <NotesWidget entityType="Meeting" entityId={mtg._id} entityName={mtg.title} />
             </div>
           ))}
         </div>

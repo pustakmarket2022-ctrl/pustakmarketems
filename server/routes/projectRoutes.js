@@ -8,6 +8,7 @@ const {
   deleteProject,
   trackProject,
   getProjectContributors,
+  updateProjectProgress,
 } = require('../controllers/projectController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -17,16 +18,17 @@ router.get('/track/:identifier', trackProject);
 router.use(protect);
 
 router.get('/:id/contributors', getProjectContributors);
+router.put('/:id/progress', updateProjectProgress);
 
 router
   .route('/')
   .get(getProjects)
-  .post(authorize('Admin', 'Super Admin'), createProject);
+  .post(authorize('Admin'), createProject);
 
 router
   .route('/:id')
   .get(getProjectById)
-  .put(authorize('Admin', 'Super Admin'), updateProject)
-  .delete(authorize('Admin', 'Super Admin'), deleteProject);
+  .put(authorize('Admin'), updateProject)
+  .delete(authorize('Admin'), deleteProject);
 
 module.exports = router;
