@@ -1,11 +1,13 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Sun, Moon, Bell, LogOut, Globe, Menu } from 'lucide-react';
+import { Sun, Moon, Bell, LogOut, Globe, Menu, Volume2 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
 import { LanguageContext } from '../../context/LanguageContext';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { initSocket } from '../../services/socketService';
+import { speakWelcomeGreeting } from '../../utils/voiceGreeting';
+import { playNotificationChime } from '../../utils/soundEffects';
 
 const Header = ({ onToggleMobileSidebar }) => {
   const { user, logout } = useContext(AuthContext);
@@ -31,6 +33,7 @@ const Header = ({ onToggleMobileSidebar }) => {
       const socket = initSocket(userId);
 
       const handleNotification = (data) => {
+        playNotificationChime(data?.notification?.title || 'New Notification');
         if (data && data.unreadCount !== undefined) {
           setUnreadCount(data.unreadCount);
         } else {
@@ -78,6 +81,26 @@ const Header = ({ onToggleMobileSidebar }) => {
       </div>
 
       <div className="flex-row" style={{ gap: '10px' }}>
+        {/* Voice Welcome Greeting Audio Button */}
+        <button
+          onClick={() => speakWelcomeGreeting(user, true)}
+          style={{
+            background: 'var(--bg-input)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--primary)',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          title="Play Voice Welcome Greeting Audio"
+        >
+          <Volume2 size={18} />
+        </button>
+
         {/* Bilingual Language Switcher Button */}
         <button
           onClick={toggleLanguage}

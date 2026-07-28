@@ -25,6 +25,7 @@ import Badge from '../components/common/Badge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Pagination from '../components/common/Pagination';
 import { NotificationContext } from '../context/NotificationContext';
+import { playNotificationChime } from '../utils/soundEffects';
 
 const moduleTypes = ['All', 'Task', 'Attendance', 'Leave', 'Salary', 'Meeting', 'Advance', 'Overtime', 'System'];
 
@@ -93,10 +94,7 @@ const NotificationsCenterPage = () => {
     if (socket) {
       const handleNewNotification = (data) => {
         if (soundEnabled) {
-          try {
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            audio.play().catch(() => {});
-          } catch (e) {}
+          playNotificationChime(data?.notification?.title || 'New Notification');
         }
         fetchNotifications();
       };

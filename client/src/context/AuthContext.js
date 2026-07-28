@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { loginUser, getMe } from '../services/authService';
+import { speakWelcomeGreeting } from '../utils/voiceGreeting';
 
 export const AuthContext = createContext();
 
@@ -14,6 +15,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const data = await getMe();
           setUser(data.user);
+          speakWelcomeGreeting(data.user);
         } catch (err) {
           console.error('[Auth Error]: Failed to fetch user', err);
           logout();
@@ -29,12 +31,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('pustak_token', data.token);
     setToken(data.token);
     setUser(data.user);
+    sessionStorage.removeItem('ems_welcome_played');
+    speakWelcomeGreeting(data.user, true);
     return data;
   };
 
   const logout = () => {
     localStorage.removeItem('pustak_token');
     localStorage.removeItem('pustak_user');
+    sessionStorage.removeItem('ems_welcome_played');
     setToken(null);
     setUser(null);
   };
