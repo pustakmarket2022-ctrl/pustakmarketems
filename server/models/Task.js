@@ -16,10 +16,15 @@ const taskSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    taskCategory: {
+      type: String,
+      enum: ['Project Task', 'General Office Work'],
+      default: 'Project Task',
+    },
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project',
-      required: true,
+      required: false,
     },
     assignedTo: [
       {

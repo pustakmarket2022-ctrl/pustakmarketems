@@ -56,8 +56,8 @@ const TaskReviewModal = ({ isOpen, onClose, onReview, task }) => {
 
           <div className="flex-row" style={{ gap: '20px', fontSize: '0.85rem', flexWrap: 'wrap' }}>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Publication Project: </span>
-              <strong>{task.project?.bookName || task.project?.projectName}</strong>
+              <span style={{ color: 'var(--text-muted)' }}>Category / Project: </span>
+              <strong>{task.project ? `📖 ${task.project.bookName || task.project.projectName}` : '🏢 General Office Work (Internal Task)'}</strong>
             </div>
             <div>
               <span style={{ color: 'var(--text-muted)' }}>Task Amount: </span>

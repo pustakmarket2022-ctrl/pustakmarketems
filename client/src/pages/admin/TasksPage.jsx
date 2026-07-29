@@ -251,7 +251,28 @@ const TasksPage = () => {
                         Est. {taskItem.estimatedHours} hrs | {taskItem.progressPercentage}% Complete
                       </div>
                     </td>
-                    <td>{taskItem.project?.bookName || taskItem.project?.projectName || 'N/A'}</td>
+                    <td>
+                      {taskItem.project ? (
+                        <span>📖 {taskItem.project.bookName || taskItem.project.projectName}</span>
+                      ) : (
+                        <span
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            background: '#f3f4f6',
+                            color: '#374151',
+                            border: '1px solid #d1d5db',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          🏢 General Office Work
+                        </span>
+                      )}
+                    </td>
                     <td>
                       {(taskItem.assignedTo || []).map((u) => u.fullName).join(', ') || 'Unassigned'}
                     </td>

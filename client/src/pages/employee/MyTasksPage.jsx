@@ -128,7 +128,7 @@ const MyTasksPage = () => {
                 <div>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 4px 0' }}>{t.taskTitle}</h3>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    Project: <strong>{t.project?.bookName || t.project?.projectName}</strong>
+                    Category: <strong>{t.project ? `📖 ${t.project.bookName || t.project.projectName}` : '🏢 General Office Work (Internal Task)'}</strong>
                   </div>
                 </div>
 

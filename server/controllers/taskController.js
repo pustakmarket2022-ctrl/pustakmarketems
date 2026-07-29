@@ -109,8 +109,18 @@ exports.createTask = async (req, res, next) => {
       }
     }
 
+    // Handle General Office Work vs Project Task
+    let project = req.body.project;
+    let taskCategory = req.body.taskCategory || 'Project Task';
+    if (!project || project === 'office_work' || project === 'general' || taskCategory === 'General Office Work') {
+      project = null;
+      taskCategory = 'General Office Work';
+    }
+
     const task = await Task.create({
       ...req.body,
+      project,
+      taskCategory,
       assignedTo: assignedTo || [],
       taskId,
       attachments: initialAttachments,
@@ -168,6 +178,11 @@ exports.updateTask = async (req, res, next) => {
       } catch (e) {
         updateBody.assignedTo = [updateBody.assignedTo];
       }
+    }
+
+    if (!updateBody.project || updateBody.project === 'office_work' || updateBody.project === 'general' || updateBody.taskCategory === 'General Office Work') {
+      updateBody.project = null;
+      updateBody.taskCategory = 'General Office Work';
     }
 
     const uploadedFiles = req.files || (req.file ? [req.file] : []);

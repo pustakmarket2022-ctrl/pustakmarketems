@@ -205,16 +205,19 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
               <select
                 name="project"
                 className="form-select"
-                value={formData.project}
+                value={formData.project || 'office_work'}
                 onChange={handleChange}
-                required
               >
-                <option value="">Select Project</option>
-                {projectList.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.bookName || p.projectName}
-                  </option>
-                ))}
+                <option value="office_work">🏢 General Office Work (Internal / Non-Project Task)</option>
+                {projectList.length > 0 && (
+                  <optgroup label="Publication Projects">
+                    {projectList.map((p) => (
+                      <option key={p._id} value={p._id}>
+                        📖 {p.bookName || p.projectName} ({p.projectId || 'PRJ'})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             )}
           </div>
