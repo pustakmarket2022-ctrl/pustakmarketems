@@ -37,20 +37,25 @@
   --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
   --glass-bg: rgba(30, 41, 59, 0.7);
   --glass-border: rgba(255, 255, 255, 0.08);
+
+  --landing-mesh: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.1) 50%, transparent 80%);
+  --landing-footer-bg: #060911;
+  --landing-badge-bg: rgba(99, 102, 241, 0.15);
+  --landing-glow: rgba(99, 102, 241, 0.35);
 }
 
 [data-theme='light'] {
-  --bg-main: #F1F5F9;
+  --bg-main: #F8FAFC;
   --bg-sidebar: #FFFFFF;
-  --bg-header: rgba(255, 255, 255, 0.85);
+  --bg-header: rgba(255, 255, 255, 0.88);
   --bg-card: #FFFFFF;
-  --bg-card-hover: #F8FAFC;
-  --bg-input: #F8FAFC;
+  --bg-card-hover: #F1F5F9;
+  --bg-input: #F1F5F9;
   --bg-modal: #FFFFFF;
 
   --text-main: #0F172A;
   --text-secondary: #475569;
-  --text-muted: #94A3B8;
+  --text-muted: #64748B;
 
   --border-color: #E2E8F0;
   --border-light: #F1F5F9;
@@ -74,11 +79,16 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-bg: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(0, 0, 0, 0.06);
+
+  --landing-mesh: radial-gradient(ellipse at top, rgba(79, 70, 229, 0.12), rgba(2, 132, 199, 0.06) 50%, transparent 80%);
+  --landing-footer-bg: #E2E8F0;
+  --landing-badge-bg: rgba(79, 70, 229, 0.08);
+  --landing-glow: rgba(79, 70, 229, 0.2);
 }
 
-/* Dynamic Landing Page Theme Preset Utility Animations & Styles */
+/* Landing Page Utility Animations & Hover Effects */
 @keyframes landingPulseGlow {
   0%, 100% { opacity: 0.4; transform: scale(1); }
   50% { opacity: 0.8; transform: scale(1.05); }
@@ -94,5 +104,5 @@
 
 .theme-card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lg);
 }
