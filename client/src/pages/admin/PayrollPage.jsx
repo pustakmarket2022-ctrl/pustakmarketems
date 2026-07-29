@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { DollarSign, Download, CheckCircle, Plus, Edit2, FileSpreadsheet } from 'lucide-react';
+import { DollarSign, Download, CheckCircle, Plus, Edit2, FileSpreadsheet, Eye } from 'lucide-react';
 import { getSalaries, generatePayroll, updateSalary, downloadSalarySlip } from '../../services/salaryService';
 import { getUsers } from '../../services/userService';
 import { exportReportExcel } from '../../services/reportService';
 import GeneratePayrollModal from '../../components/salary/GeneratePayrollModal';
 import EditSalaryModal from '../../components/salary/EditSalaryModal';
+import SalarySlipModal from '../../components/salary/SalarySlipModal';
 import Badge from '../../components/common/Badge';
 import Pagination from '../../components/common/Pagination';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -45,6 +46,7 @@ const PayrollPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState(null);
+  const [viewSalary, setViewSalary] = useState(null);
 
   const fetchEmployees = async () => {
     try {
@@ -293,6 +295,13 @@ const PayrollPage = () => {
                         )}
                         <button
                           className="btn btn-secondary btn-sm"
+                          onClick={() => setViewSalary(s)}
+                          title="View Salary Slip"
+                        >
+                          <Eye size={14} /> View
+                        </button>
+                        <button
+                          className="btn btn-secondary btn-sm"
                           onClick={() => handleDownloadPDF(s._id, s.salaryId)}
                           title="Download Salary Slip PDF"
                         >
@@ -326,6 +335,10 @@ const PayrollPage = () => {
         onSave={handleSaveSalaryEdit}
         salary={selectedSalary}
       />
+
+      {viewSalary && (
+        <SalarySlipModal salary={viewSalary} onClose={() => setViewSalary(null)} />
+      )}
     </div>
   );
 };

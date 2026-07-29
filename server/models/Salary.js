@@ -59,6 +59,19 @@ const salarySchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    pendingAdvance: {
+      type: Number,
+      default: 0,
+    },
+    tasksDetails: [
+      {
+        taskId: String,
+        taskTitle: String,
+        completedDate: Date,
+        amount: Number,
+        projectName: String,
+      },
+    ],
     totalEarnings: {
       type: Number,
       required: true,

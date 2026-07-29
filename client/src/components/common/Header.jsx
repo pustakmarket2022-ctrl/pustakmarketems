@@ -33,7 +33,9 @@ const Header = ({ onToggleMobileSidebar }) => {
       const socket = initSocket(userId);
 
       const handleNotification = (data) => {
-        playNotificationChime(data?.notification?.title || 'New Notification');
+        if (data?.notification) {
+          playNotificationChime(data.notification.title || 'New Notification');
+        }
         if (data && data.unreadCount !== undefined) {
           setUnreadCount(data.unreadCount);
         } else {
@@ -45,8 +47,14 @@ const Header = ({ onToggleMobileSidebar }) => {
         socket.on('new_notification', handleNotification);
       }
 
+      // Background polling interval (every 4 seconds) to guarantee live counter sync
+      const pollInterval = setInterval(() => {
+        fetchUnreadCount();
+      }, 4000);
+
       return () => {
         if (socket) socket.off('new_notification', handleNotification);
+        clearInterval(pollInterval);
       };
     }
   }, [user]);

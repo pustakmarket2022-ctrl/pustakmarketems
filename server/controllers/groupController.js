@@ -132,7 +132,101 @@ exports.sendMessage = async (req, res, next) => {
       'fullName employeeId role profileImage designation'
     );
 
+    // Push real-time Socket.IO event to group room and user rooms
+    const io = req.app.get('socketio');
+    if (io) {
+      io.to(`group_${group._id}`).emit('new_group_message', populated);
+      for (const memberId of group.members) {
+        io.to(`user_${memberId}`).emit('new_group_message', populated);
+      }
+    }
+
     res.status(201).json({ success: true, data: populated });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Add Member to Discussion Group
+// @route   POST /api/groups/:id/members
+// @access  Private
+exports.addGroupMember = async (req, res, next) => {
+  try {
+    const { memberId } = req.body;
+    const group = await Group.findById(req.params.id);
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+
+    if (!memberId) {
+      return res.status(400).json({ success: false, message: 'Please provide memberId' });
+    }
+
+    if (group.members.map((m) => m.toString()).includes(memberId.toString())) {
+      return res.status(400).json({ success: false, message: 'User is already a member of this group' });
+    }
+
+    group.members.push(memberId);
+    group.updatedAt = new Date();
+    await group.save();
+
+    const newMember = await User.findById(memberId);
+    if (newMember) {
+      await Notification.create({
+        recipient: memberId,
+        title: `Added to Group: ${group.name}`,
+        message: `${req.user.fullName} added you to discussion group "${group.name}".`,
+        type: 'Discussion',
+        link: '/employee/discussion',
+      });
+    }
+
+    logAudit({
+      user: req.user.id,
+      action: 'Group Member Added',
+      details: `Added ${newMember ? newMember.fullName : memberId} to group ${group.name}`,
+      req,
+    });
+
+    const populatedGroup = await Group.findById(group._id)
+      .populate('createdBy', 'fullName role')
+      .populate('members', 'fullName employeeId department designation profileImage email');
+
+    res.status(200).json({ success: true, message: 'Member added successfully', data: populatedGroup });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Remove Member from Discussion Group
+// @route   DELETE /api/groups/:id/members/:memberId
+// @access  Private
+exports.removeGroupMember = async (req, res, next) => {
+  try {
+    const { id, memberId } = req.params;
+    const group = await Group.findById(id);
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+
+    group.members = group.members.filter((m) => m.toString() !== memberId.toString());
+    group.updatedAt = new Date();
+    await group.save();
+
+    logAudit({
+      user: req.user.id,
+      action: 'Group Member Removed',
+      details: `Removed member ${memberId} from group ${group.name}`,
+      req,
+    });
+
+    const populatedGroup = await Group.findById(group._id)
+      .populate('createdBy', 'fullName role')
+      .populate('members', 'fullName employeeId department designation profileImage email');
+
+    res.status(200).json({ success: true, message: 'Member removed successfully', data: populatedGroup });
   } catch (err) {
     next(err);
   }

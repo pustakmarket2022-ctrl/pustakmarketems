@@ -82,37 +82,58 @@ exports.getTaskById = async (req, res, next) => {
   }
 };
 
-// @desc    Create Task (Admin)
-// @route   POST /api/tasks
-// @access  Private (Admin / Super Admin / HR / Manager)
 exports.createTask = async (req, res, next) => {
   try {
     const taskId = await generateTaskId();
 
+    const initialAttachments = [];
+    const uploadedFiles = req.files || (req.file ? [req.file] : []);
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      uploadedFiles.forEach((file) => {
+        const fileInfo = getUploadedFileInfo(file);
+        initialAttachments.push({
+          fileName: file.originalname || file.filename || 'Admin Reference File',
+          filePath: fileInfo.path,
+          uploadedAt: new Date(),
+        });
+      });
+    }
+
+    // Parse assignedTo if sent as array string in FormData
+    let assignedTo = req.body.assignedTo;
+    if (typeof assignedTo === 'string') {
+      try {
+        assignedTo = JSON.parse(assignedTo);
+      } catch (e) {
+        assignedTo = [assignedTo];
+      }
+    }
+
     const task = await Task.create({
       ...req.body,
+      assignedTo: assignedTo || [],
       taskId,
+      attachments: initialAttachments,
     });
 
     // Notify & email assigned employees
-    if (req.body.assignedTo && Array.isArray(req.body.assignedTo)) {
-      for (const empId of req.body.assignedTo) {
-        const emp = await User.findById(empId);
-        if (emp) {
-          await createAndEmitNotification(req.app, {
-            userId: emp._id,
-            senderId: req.user.id,
-            title: 'New Task Assigned',
-            message: `You have been assigned to task '${task.taskTitle}' (${task.taskId}).`,
-            type: 'Task',
-            referenceId: task._id,
-            referenceModel: 'Task',
-            route: '/employee/tasks',
-            priority: task.priority === 'Urgent' || task.priority === 'High' ? 'High' : 'Medium',
-          });
+    const assignedList = Array.isArray(task.assignedTo) ? task.assignedTo : [];
+    for (const empId of assignedList) {
+      const emp = await User.findById(empId);
+      if (emp) {
+        await createAndEmitNotification(req.app, {
+          userId: emp._id,
+          senderId: req.user.id,
+          title: 'New Task Assigned',
+          message: `You have been assigned to task '${task.taskTitle}' (${task.taskId}).`,
+          type: 'Task',
+          referenceId: task._id,
+          referenceModel: 'Task',
+          route: '/employee/tasks',
+          priority: task.priority === 'Urgent' || task.priority === 'High' ? 'High' : 'Medium',
+        });
 
-          sendTaskAssignedEmail(emp, task, req.user);
-        }
+        sendTaskAssignedEmail(emp, task, req.user);
       }
     }
 
@@ -140,7 +161,30 @@ exports.updateTask = async (req, res, next) => {
 
     const isDeadlineChanged = req.body.deadline && new Date(req.body.deadline).getTime() !== new Date(oldTask.deadline).getTime();
 
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
+    const updateBody = { ...req.body };
+    if (typeof updateBody.assignedTo === 'string') {
+      try {
+        updateBody.assignedTo = JSON.parse(updateBody.assignedTo);
+      } catch (e) {
+        updateBody.assignedTo = [updateBody.assignedTo];
+      }
+    }
+
+    const uploadedFiles = req.files || (req.file ? [req.file] : []);
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      const existingAtts = oldTask.attachments || [];
+      uploadedFiles.forEach((file) => {
+        const fileInfo = getUploadedFileInfo(file);
+        existingAtts.push({
+          fileName: file.originalname || file.filename || 'Admin Reference File',
+          filePath: fileInfo.path,
+          uploadedAt: new Date(),
+        });
+      });
+      updateBody.attachments = existingAtts;
+    }
+
+    const task = await Task.findByIdAndUpdate(req.params.id, updateBody, {
       new: true,
       runValidators: true,
     })
@@ -205,27 +249,28 @@ exports.submitTask = async (req, res, next) => {
       });
     }
 
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
+    const uploadedFiles = req.files || (req.file ? [req.file] : []);
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      uploadedFiles.forEach((file) => {
         const fileInfo = getUploadedFileInfo(file);
         task.attachments.push({
-          fileName: file.originalname || file.filename || 'Deliverable',
+          fileName: file.originalname || file.filename || 'Work Deliverable',
           filePath: fileInfo.path,
+          uploadedAt: new Date(),
         });
-      });
-    } else if (req.file) {
-      const fileInfo = getUploadedFileInfo(req.file);
-      task.attachments.push({
-        fileName: req.file.originalname || req.file.filename || 'Deliverable',
-        filePath: fileInfo.path,
       });
     }
 
     await task.save();
 
+    const populatedTask = await Task.findById(task._id)
+      .populate('project', 'projectName bookName projectId')
+      .populate('assignedTo', 'fullName email employeeId profileImage department')
+      .populate('comments.user', 'fullName profileImage role');
+
     logAudit({ user: req.user.id, action: 'Task Submitted', details: `Submitted task ${task.taskTitle}`, req });
 
-    res.status(200).json({ success: true, message: 'Task submitted for review', data: task });
+    res.status(200).json({ success: true, message: 'Task submitted for review', data: populatedTask });
   } catch (err) {
     next(err);
   }

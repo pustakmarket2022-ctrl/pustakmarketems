@@ -24,12 +24,40 @@ exports.generatePayroll = async (req, res, next) => {
     const generatedSalaries = [];
 
     for (const emp of employees) {
-      // 1. Task Incentive
+      // 1. Task Incentive & Details
       const approvedPayments = await Payment.find({
         user: emp._id,
         status: 'Unpaid',
+      }).populate({
+        path: 'task',
+        populate: { path: 'project', select: 'bookName projectName' },
       });
+
       const taskIncentive = approvedPayments.reduce((sum, p) => sum + p.amount, 0);
+
+      let tasksDetails = [];
+      if (approvedPayments.length > 0) {
+        tasksDetails = approvedPayments.map((p) => ({
+          taskId: p.task?.taskId || 'N/A',
+          taskTitle: p.task?.taskTitle || 'Task Deliverable',
+          completedDate: p.task?.completedDate || p.task?.updatedAt || p.createdAt,
+          amount: p.amount || p.task?.taskPaymentAmount || 0,
+          projectName: p.task?.project?.bookName || p.task?.project?.projectName || '',
+        }));
+      } else {
+        const empTasks = await Task.find({
+          assignedTo: emp._id,
+          taskStatus: { $in: ['Approved', 'Completed'] },
+        }).populate('project', 'bookName projectName');
+
+        tasksDetails = empTasks.map((t) => ({
+          taskId: t.taskId || 'N/A',
+          taskTitle: t.taskTitle,
+          completedDate: t.completedDate || t.updatedAt || t.createdAt,
+          amount: t.taskPaymentAmount || 0,
+          projectName: t.project?.bookName || t.project?.projectName || '',
+        }));
+      }
 
       // 2. Fixed Base Salary
       let fixedSalary = 0;
@@ -45,13 +73,18 @@ exports.generatePayroll = async (req, res, next) => {
       const overtimeHours = approvedOvertimes.reduce((sum, o) => sum + (o.hours || 0), 0);
       const overtimeAmount = approvedOvertimes.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-      // 4. Approved Advance Deduction
-      const approvedAdvances = await AdvanceRequest.find({
+      // 4. Approved & Pending Advance Deductions
+      const allAdvRequests = await AdvanceRequest.find({
         user: emp._id,
-        status: { $in: ['Approved', 'Paid'] },
+        status: { $in: ['Pending', 'Approved', 'Paid'] },
       });
-      const autoAdvDeduction = approvedAdvances.reduce((sum, a) => sum + a.amount, 0);
+      const autoAdvDeduction = allAdvRequests
+        .filter((a) => a.status === 'Approved' || a.status === 'Paid')
+        .reduce((sum, a) => sum + a.amount, 0);
       const advDeduction = advanceSalary !== undefined ? Number(advanceSalary) : autoAdvDeduction;
+
+      const totalAdvRequested = allAdvRequests.reduce((sum, a) => sum + (a.amount || 0), 0);
+      const pendingAdvance = Math.max(0, totalAdvRequested - advDeduction);
 
       // 5. Bonus & Penalty
       const bonus = manualBonus !== undefined ? Number(manualBonus) : 0;
@@ -72,6 +105,8 @@ exports.generatePayroll = async (req, res, next) => {
           salaryType: emp.salaryType,
           fixedSalary,
           taskIncentive,
+          tasksDetails,
+          pendingAdvance,
           bonus,
           overtimeHours,
           overtimeAmount,
@@ -231,10 +266,38 @@ exports.downloadSalarySlip = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Not authorized to access this salary slip' });
     }
 
+    const salaryObj = salary.toObject();
+
+    // Dynamically populate tasks details if missing
+    if (!salaryObj.tasksDetails || salaryObj.tasksDetails.length === 0) {
+      const empTasks = await Task.find({
+        assignedTo: salary.user._id,
+        taskStatus: { $in: ['Approved', 'Completed'] },
+      }).populate('project', 'bookName projectName');
+
+      salaryObj.tasksDetails = empTasks.map((t) => ({
+        taskId: t.taskId || 'N/A',
+        taskTitle: t.taskTitle,
+        completedDate: t.completedDate || t.updatedAt || t.createdAt,
+        amount: t.taskPaymentAmount || 0,
+        projectName: t.project?.bookName || t.project?.projectName || '',
+      }));
+    }
+
+    // Dynamically populate pending advance if missing
+    if (salaryObj.pendingAdvance === undefined || salaryObj.pendingAdvance === 0) {
+      const pendingAdv = await AdvanceRequest.find({
+        user: salary.user._id,
+        status: { $in: ['Pending', 'Approved'] },
+      });
+      const totalAdv = pendingAdv.reduce((sum, a) => sum + (a.amount || 0), 0);
+      salaryObj.pendingAdvance = Math.max(0, totalAdv - (salaryObj.advanceSalary || 0));
+    }
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=SalarySlip_${salary.salaryId}.pdf`);
 
-    generateSalarySlipPDF(salary, res);
+    generateSalarySlipPDF(salaryObj, res);
   } catch (err) {
     next(err);
   }

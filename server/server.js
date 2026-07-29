@@ -36,6 +36,12 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('join_group_room', (groupId) => {
+    if (groupId) {
+      socket.join(`group_${groupId}`);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`[Socket.IO]: Client disconnected -> ${socket.id}`);
   });

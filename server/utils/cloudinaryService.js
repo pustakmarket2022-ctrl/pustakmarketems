@@ -24,6 +24,8 @@ const deleteFromCloudinary = async (publicId) => {
   }
 };
 
+const path = require('path');
+
 /**
  * Helper to get file path/URL from req.file or req.files
  */
@@ -37,8 +39,9 @@ const getUploadedFileInfo = (file) => {
     };
   }
   // Local disk fallback
+  const filename = file.filename || path.basename(file.path);
   return {
-    path: `/uploads/${file.filename}`,
+    path: `/uploads/${filename}`,
     public_id: '',
   };
 };

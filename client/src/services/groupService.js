@@ -21,3 +21,13 @@ export const sendMessage = async (groupId, formData) => {
   });
   return res.data;
 };
+
+export const addGroupMember = async (groupId, memberId) => {
+  const res = await api.post(`/groups/${groupId}/members`, { memberId });
+  return res.data;
+};
+
+export const removeGroupMember = async (groupId, memberId) => {
+  const res = await api.delete(`/groups/${groupId}/members/${memberId}`);
+  return res.data;
+};

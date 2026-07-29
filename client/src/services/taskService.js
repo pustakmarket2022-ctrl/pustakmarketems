@@ -11,17 +11,23 @@ export const getTaskById = async (id) => {
 };
 
 export const createTask = async (taskData) => {
-  const response = await api.post('/tasks', taskData);
+  const isFormData = typeof FormData !== 'undefined' && taskData instanceof FormData;
+  const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const response = await api.post('/tasks', taskData, config);
   return response.data;
 };
 
 export const updateTask = async (id, taskData) => {
-  const response = await api.put(`/tasks/${id}`, taskData);
+  const isFormData = typeof FormData !== 'undefined' && taskData instanceof FormData;
+  const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const response = await api.put(`/tasks/${id}`, taskData, config);
   return response.data;
 };
 
 export const updateTaskStatus = async (id, statusData) => {
-  const response = await api.put(`/tasks/${id}/status`, statusData);
+  const response = await api.put(`/tasks/${id}/status`, statusData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data;
 };
 
@@ -31,7 +37,9 @@ export const deleteTask = async (id) => {
 };
 
 export const submitTask = async (id, formData) => {
-  const response = await api.put(`/tasks/${id}/submit`, formData);
+  const response = await api.put(`/tasks/${id}/submit`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data;
 };
 

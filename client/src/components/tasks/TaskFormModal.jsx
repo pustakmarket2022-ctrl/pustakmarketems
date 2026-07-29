@@ -116,9 +116,24 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
     });
   };
 
+  const [adminFiles, setAdminFiles] = useState([]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (adminFiles && adminFiles.length > 0) {
+      const data = new FormData();
+      Object.keys(formData).forEach((key) => {
+        if (key === 'assignedTo') {
+          data.append('assignedTo', JSON.stringify(formData.assignedTo));
+        } else {
+          data.append(key, formData[key]);
+        }
+      });
+      Array.from(adminFiles).forEach((f) => data.append('attachments', f));
+      onSubmit(data);
+    } else {
+      onSubmit(formData);
+    }
   };
 
   return (
@@ -138,117 +153,86 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
               className="form-input"
               value={formData.taskTitle}
               onChange={handleChange}
-              placeholder="e.g. Cover Jacket Typography & Proofing"
+              placeholder="e.g. Manuscript Proofreading & Formatting"
               required
             />
           </div>
 
-          {/* Project Selection with Quick Add Project Button */}
-          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+          <div className="form-group">
             <div className="flex-row" style={{ justifyContent: 'space-between', marginBottom: '6px' }}>
               <label className="form-label" style={{ margin: 0 }}>Publication Project *</label>
               <button
                 type="button"
-                className="btn btn-secondary btn-sm"
-                style={{ padding: '4px 10px', fontSize: '0.78rem' }}
+                className="btn btn-secondary btn-sm flex-row"
+                style={{ padding: '2px 8px', fontSize: '0.75rem', gap: '4px' }}
                 onClick={() => setShowQuickProject(!showQuickProject)}
               >
-                <Plus size={14} /> {showQuickProject ? 'Cancel Quick Add' : '+ Quick Add New Project'}
+                <Plus size={12} /> {showQuickProject ? 'Cancel' : 'Quick Add Book'}
               </button>
             </div>
 
-            {/* Quick Add Project Form Card Inline */}
-            {showQuickProject && (
-              <div
-                style={{
-                  padding: '14px',
-                  background: 'var(--bg-input)',
-                  border: '1px solid var(--primary)',
-                  borderRadius: '10px',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px',
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>
-                  <BookMarked size={16} style={{ display: 'inline', marginRight: '6px' }} />
-                  Quick Project Registration
-                </div>
-
-                <div className="grid-2" style={{ gap: '10px' }}>
-                  <input
-                    type="text"
-                    name="bookName"
-                    className="form-input"
-                    placeholder="Book Title *"
-                    value={quickProjectData.bookName}
-                    onChange={handleQuickProjectChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="author"
-                    className="form-input"
-                    placeholder="Author Name *"
-                    value={quickProjectData.author}
-                    onChange={handleQuickProjectChange}
-                    required
-                  />
-                </div>
-
-                <div className="grid-2" style={{ gap: '10px' }}>
-                  <input
-                    type="text"
-                    name="projectName"
-                    className="form-input"
-                    placeholder="Series Name (Optional)"
-                    value={quickProjectData.projectName}
-                    onChange={handleQuickProjectChange}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    onClick={handleCreateQuickProject}
-                    disabled={quickLoading}
-                  >
-                    {quickLoading ? 'Saving...' : 'Create & Select Project'}
-                  </button>
-                </div>
+            {showQuickProject ? (
+              <div style={{ padding: '12px', background: 'var(--bg-input)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <input
+                  type="text"
+                  name="bookName"
+                  placeholder="Book / Publication Title *"
+                  className="form-input"
+                  value={quickProjectData.bookName}
+                  onChange={handleQuickProjectChange}
+                  required
+                />
+                <input
+                  type="text"
+                  name="author"
+                  placeholder="Author Name *"
+                  className="form-input"
+                  value={quickProjectData.author}
+                  onChange={handleQuickProjectChange}
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm flex-row"
+                  onClick={handleCreateQuickProject}
+                  disabled={quickLoading || !quickProjectData.bookName || !quickProjectData.author}
+                  style={{ alignSelf: 'flex-end', gap: '4px' }}
+                >
+                  <Check size={14} /> {quickLoading ? 'Creating...' : 'Save Book & Assign'}
+                </button>
               </div>
+            ) : (
+              <select
+                name="project"
+                className="form-select"
+                value={formData.project}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Project</option>
+                {projectList.map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {p.bookName || p.projectName}
+                  </option>
+                ))}
+              </select>
             )}
-
-            <select name="project" className="form-select" value={formData.project} onChange={handleChange} required>
-              <option value="">Select Project</option>
-              {projectList.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.bookName} ({p.projectId || 'New Project'})
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Priority</label>
-            <select name="priority" className="form-select" value={formData.priority} onChange={handleChange}>
+            <label className="form-label">Priority Level</label>
+            <select
+              name="priority"
+              className="form-select"
+              value={formData.priority}
+              onChange={handleChange}
+            >
               {priorities.map((p) => (
                 <option key={p} value={p}>
                   {p}
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Task Payment Amount (₹ INR) *</label>
-            <input
-              type="number"
-              name="taskPaymentAmount"
-              className="form-input"
-              value={formData.taskPaymentAmount}
-              onChange={handleChange}
-              required
-            />
           </div>
 
           <div className="form-group">
@@ -263,7 +247,19 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
           </div>
 
           <div className="form-group">
-            <label className="form-label">Deadline Date *</label>
+            <label className="form-label">Payment Amount (₹)</label>
+            <input
+              type="number"
+              name="taskPaymentAmount"
+              className="form-input"
+              value={formData.taskPaymentAmount}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+            <label className="form-label">Task Deadline *</label>
             <input
               type="date"
               name="deadline"
@@ -321,6 +317,20 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
             value={formData.description}
             onChange={handleChange}
           />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Share Working / Reference Files for Employee(s)</label>
+          <input
+            type="file"
+            multiple
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+            className="form-input"
+            onChange={(e) => setAdminFiles(e.target.files)}
+          />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+            Upload raw manuscripts, guidelines, templates or project assets for assigned employees to work on.
+          </span>
         </div>
 
         <div className="modal-footer" style={{ padding: '16px 0 0 0' }}>

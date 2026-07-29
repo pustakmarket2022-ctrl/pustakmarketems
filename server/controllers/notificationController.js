@@ -58,6 +58,15 @@ exports.getNotifications = async (req, res, next) => {
   }
 };
 
+const emitUnreadCount = (req, count) => {
+  try {
+    const io = req.app.get('socketio');
+    if (io) {
+      io.to(`user_${req.user.id}`).emit('new_notification', { unreadCount: count });
+    }
+  } catch (e) {}
+};
+
 // @desc    Mark single notification as read
 // @route   PUT /api/notifications/:id/read
 // @access  Private
@@ -74,6 +83,7 @@ exports.markAsRead = async (req, res, next) => {
     }
 
     const unreadCount = await Notification.countDocuments({ userId: req.user.id, isRead: false });
+    emitUnreadCount(req, unreadCount);
 
     logAudit({
       user: req.user.id,
@@ -94,6 +104,7 @@ exports.markAsRead = async (req, res, next) => {
 exports.markAllAsRead = async (req, res, next) => {
   try {
     await Notification.updateMany({ userId: req.user.id, isRead: false }, { isRead: true });
+    emitUnreadCount(req, 0);
 
     logAudit({
       user: req.user.id,
@@ -121,6 +132,7 @@ exports.deleteNotification = async (req, res, next) => {
 
     await notification.deleteOne();
     const unreadCount = await Notification.countDocuments({ userId: req.user.id, isRead: false });
+    emitUnreadCount(req, unreadCount);
 
     logAudit({
       user: req.user.id,
@@ -147,6 +159,7 @@ exports.deleteMultipleNotifications = async (req, res, next) => {
 
     await Notification.deleteMany({ _id: { $in: notificationIds }, userId: req.user.id });
     const unreadCount = await Notification.countDocuments({ userId: req.user.id, isRead: false });
+    emitUnreadCount(req, unreadCount);
 
     logAudit({
       user: req.user.id,
@@ -167,6 +180,7 @@ exports.deleteMultipleNotifications = async (req, res, next) => {
 exports.deleteAllNotifications = async (req, res, next) => {
   try {
     await Notification.deleteMany({ userId: req.user.id });
+    emitUnreadCount(req, 0);
 
     logAudit({
       user: req.user.id,
