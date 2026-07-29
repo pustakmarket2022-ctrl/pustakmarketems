@@ -203,3 +203,23 @@ button, input, select, textarea {
     font-size: 1.3rem;
   }
 }
+
+/* Landing Page Responsiveness */
+.landing-desktop-nav {
+  display: flex;
+  align-items: center;
+}
+
+.landing-mobile-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .landing-desktop-nav {
+    display: none !important;
+  }
+  .landing-mobile-toggle {
+    display: block !important;
+  }
+}
+

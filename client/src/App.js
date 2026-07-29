@@ -46,6 +46,7 @@ import MyProfilePage from './pages/employee/MyProfilePage';
 import MeetingsPage from './pages/MeetingsPage';
 import GroupDiscussionPage from './pages/GroupDiscussionPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import OvertimePage from './pages/OvertimePage';
 
 // Public Landing & Tracking Pages
 import LandingPage from './pages/public/LandingPage';
@@ -107,6 +108,7 @@ function App() {
                   <Route path="/admin/attendance" element={<AttendancePage />} />
                   <Route path="/admin/payroll" element={<PayrollPage />} />
                   <Route path="/admin/advances" element={<AdvancePage />} />
+                  <Route path="/admin/overtime" element={<OvertimePage />} />
                   <Route path="/admin/meetings" element={<MeetingsPage />} />
                   <Route path="/admin/discussion" element={<GroupDiscussionPage />} />
                   <Route path="/admin/leaderboard" element={<LeaderboardPage />} />
@@ -120,6 +122,7 @@ function App() {
                   <Route path="/employee/attendance" element={<MyAttendancePage />} />
                   <Route path="/employee/salary" element={<MySalaryPage />} />
                   <Route path="/employee/advances" element={<MyAdvancePage />} />
+                  <Route path="/employee/overtime" element={<OvertimePage />} />
                   <Route path="/employee/meetings" element={<MeetingsPage />} />
                   <Route path="/employee/discussion" element={<GroupDiscussionPage />} />
                   <Route path="/employee/leaderboard" element={<LeaderboardPage />} />

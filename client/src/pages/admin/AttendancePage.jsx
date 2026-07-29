@@ -83,6 +83,15 @@ const AttendancePage = () => {
     }
   }, [tab, fetchAttendanceLogs, fetchLeaveRequests]);
 
+  const formatLocalTime = (dateObj) => {
+    if (!dateObj) return '';
+    const d = new Date(dateObj);
+    if (isNaN(d.getTime())) return '';
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const handleOpenManualModal = (log = null) => {
     if (log) {
       setSelectedLog(log);
@@ -90,8 +99,8 @@ const AttendancePage = () => {
         userId: log.user?._id || log.user,
         date: log.date || new Date().toISOString().split('T')[0],
         status: log.status || 'Present',
-        checkIn: log.checkIn ? new Date(log.checkIn).toISOString().substring(11, 16) : '',
-        checkOut: log.checkOut ? new Date(log.checkOut).toISOString().substring(11, 16) : '',
+        checkIn: formatLocalTime(log.checkIn) || '09:30',
+        checkOut: formatLocalTime(log.checkOut) || '18:30',
         workingHours: log.workingHours || 8,
         reason: 'Admin Presenty Update',
         notes: log.notes || '',
@@ -117,7 +126,7 @@ const AttendancePage = () => {
     try {
       if (selectedLog) {
         await updateAttendance(selectedLog._id, editForm);
-        addToast(`Attendance status updated for ${selectedLog.user?.fullName}`, 'success');
+        addToast(`Attendance status updated for ${selectedLog.user?.fullName || 'Employee'}`, 'success');
       } else {
         await markAttendanceManual(editForm);
         addToast('Attendance marked successfully', 'success');
@@ -125,7 +134,7 @@ const AttendancePage = () => {
       setIsEditModalOpen(false);
       fetchAttendanceLogs();
     } catch (err) {
-      addToast('Failed to update attendance record', 'danger');
+      addToast(err.response?.data?.message || 'Failed to update attendance record', 'danger');
     }
   };
 

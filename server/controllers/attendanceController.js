@@ -141,6 +141,18 @@ exports.checkOut = async (req, res, next) => {
   }
 };
 
+const parseDateTime = (dateStr, timeOrIso) => {
+  if (!timeOrIso) return null;
+  const d = new Date(timeOrIso);
+  if (!isNaN(d.getTime())) return d;
+  if (typeof timeOrIso === 'string' && timeOrIso.includes(':')) {
+    const timeFormatted = timeOrIso.length === 5 ? `${timeOrIso}:00` : timeOrIso;
+    const combined = new Date(`${dateStr}T${timeFormatted}`);
+    if (!isNaN(combined.getTime())) return combined;
+  }
+  return null;
+};
+
 // @desc    Admin Edit Attendance Record
 // @route   PUT /api/attendance/:id/edit
 // @access  Private (Admin / Super Admin / HR)
@@ -158,9 +170,9 @@ exports.editAttendance = async (req, res, next) => {
     const previousCheckOut = attendance.checkOut;
 
     if (status) attendance.status = status;
-    if (checkIn) attendance.checkIn = new Date(checkIn);
-    if (checkOut) attendance.checkOut = new Date(checkOut);
-    if (notes) attendance.notes = notes;
+    if (checkIn) attendance.checkIn = parseDateTime(attendance.date, checkIn) || attendance.checkIn;
+    if (checkOut) attendance.checkOut = parseDateTime(attendance.date, checkOut) || attendance.checkOut;
+    if (notes !== undefined) attendance.notes = notes;
     if (workingHours !== undefined) attendance.workingHours = Number(workingHours);
 
     if (attendance.checkIn && attendance.checkOut && workingHours === undefined) {
@@ -227,8 +239,8 @@ exports.markAttendanceManual = async (req, res, next) => {
     }
 
     if (status) attendance.status = status;
-    if (checkIn) attendance.checkIn = new Date(checkIn);
-    if (checkOut) attendance.checkOut = new Date(checkOut);
+    if (checkIn) attendance.checkIn = parseDateTime(dateStr, checkIn) || attendance.checkIn;
+    if (checkOut) attendance.checkOut = parseDateTime(dateStr, checkOut) || attendance.checkOut;
     if (workingHours !== undefined) attendance.workingHours = Number(workingHours);
     if (notes) attendance.notes = notes;
 
