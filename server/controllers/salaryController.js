@@ -90,8 +90,9 @@ exports.generatePayroll = async (req, res, next) => {
       const bonus = manualBonus !== undefined ? Number(manualBonus) : 0;
       const penalty = manualPenalty !== undefined ? Number(manualPenalty) : 0;
 
-      // Formula: Final Salary = Fixed + Task + Bonus + Overtime - Penalty - Advance
-      const totalEarnings = Math.max(0, fixedSalary + taskIncentive + bonus + overtimeAmount - penalty - advDeduction);
+      // Formula: Final Net Salary = Fixed + Task + Bonus + Overtime - Penalty - Advance - PendingAdvance
+      const totalDeductions = penalty + advDeduction + pendingAdvance;
+      const totalEarnings = Math.max(0, fixedSalary + taskIncentive + bonus + overtimeAmount - totalDeductions);
 
       const salaryId = await generateSalaryId();
 
@@ -109,39 +110,44 @@ exports.generatePayroll = async (req, res, next) => {
           pendingAdvance,
           bonus,
           overtimeHours,
+          overtimeRate: emp.overtimeRate || 0,
           overtimeAmount,
           penalty,
           advanceSalary: advDeduction,
           totalEarnings,
           status: 'Pending',
         },
-        { upsert: true, new: true, runValidators: true }
-      );
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      ).populate('user', 'fullName email employeeId department designation');
 
       generatedSalaries.push(salary);
 
-      // Send notification & email
-      await Notification.create({
-        recipient: emp._id,
-        title: 'Monthly Salary Statement Generated',
-        message: `Your payroll for ${month}/${year} has been generated (₹${totalEarnings.toFixed(2)}).`,
+      // Create notification & email
+      await createAndEmitNotification(req.app, {
+        userId: emp._id,
+        senderId: req.user.id,
+        title: 'Salary Slip Generated',
+        message: `Your payroll statement for ${month}/${year} has been generated. Net Salary: ₹${totalEarnings.toFixed(2)}.`,
         type: 'Salary',
-        link: '/employee/salary',
+        referenceId: salary._id,
+        referenceModel: 'Salary',
+        route: '/employee/salary',
+        priority: 'High',
       });
 
-      sendSalarySlipGeneratedEmail(emp, salary);
+      sendSalarySlipGeneratedEmail(emp, salary, month, year);
     }
 
     logAudit({
       user: req.user.id,
       action: 'Payroll Generated',
-      details: `Generated payroll for ${generatedSalaries.length} employee(s) for ${month}/${year}`,
+      details: `Generated payroll for ${month}/${year} (${generatedSalaries.length} employees)`,
       req,
     });
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
-      message: `Generated payroll for ${generatedSalaries.length} employee(s)`,
+      message: `Payroll generated for ${generatedSalaries.length} employee(s)`,
       data: generatedSalaries,
     });
   } catch (err) {
@@ -149,13 +155,17 @@ exports.generatePayroll = async (req, res, next) => {
   }
 };
 
-// @desc    Get Salaries (Admin or Employee view)
+// @desc    Get all Salary Records (Admin/HR gets all, Employee gets own)
 // @route   GET /api/salaries
 // @access  Private
 exports.getSalaries = async (req, res, next) => {
   try {
-    const { month, year, status, user, page = 1, limit = 10 } = req.query;
+    const { month, year, user, status, page = 1, limit = 10 } = req.query;
     const query = {};
+
+    if (month) query.month = parseInt(month);
+    if (year) query.year = parseInt(year);
+    if (status) query.status = status;
 
     if (req.user.role === 'Employee') {
       query.user = req.user.id;
@@ -163,15 +173,11 @@ exports.getSalaries = async (req, res, next) => {
       query.user = user;
     }
 
-    if (month) query.month = parseInt(month);
-    if (year) query.year = parseInt(year);
-    if (status) query.status = status;
-
     const skip = (page - 1) * limit;
     const total = await Salary.countDocuments(query);
     const data = await Salary.find(query)
-      .populate('user', 'fullName employeeId department designation profileImage email salaryType fixedSalary perTaskRate')
-      .sort({ year: -1, month: -1 })
+      .populate('user', 'fullName email employeeId department designation fixedSalary salaryType profileImage')
+      .sort({ year: -1, month: -1, createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
@@ -213,7 +219,8 @@ exports.updateSalary = async (req, res, next) => {
         (salary.bonus || 0) +
         (salary.overtimeAmount || 0) -
         (salary.penalty || 0) -
-        (salary.advanceSalary || 0)
+        (salary.advanceSalary || 0) -
+        (salary.pendingAdvance || 0)
     );
 
     if (status && status !== salary.status) {
@@ -293,6 +300,11 @@ exports.downloadSalarySlip = async (req, res, next) => {
       const totalAdv = pendingAdv.reduce((sum, a) => sum + (a.amount || 0), 0);
       salaryObj.pendingAdvance = Math.max(0, totalAdv - (salaryObj.advanceSalary || 0));
     }
+
+    // Ensure totalEarnings subtracts pendingAdvance for PDF display
+    const grossEarnings = (salaryObj.fixedSalary || 0) + (salaryObj.taskIncentive || 0) + (salaryObj.overtimeAmount || 0) + (salaryObj.bonus || 0);
+    const totalDeductions = (salaryObj.penalty || 0) + (salaryObj.advanceSalary || 0) + (salaryObj.pendingAdvance || 0);
+    salaryObj.totalEarnings = Math.max(0, grossEarnings - totalDeductions);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=SalarySlip_${salary.salaryId}.pdf`);

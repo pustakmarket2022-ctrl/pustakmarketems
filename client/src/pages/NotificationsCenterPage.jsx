@@ -137,6 +137,10 @@ const NotificationsCenterPage = () => {
   const handleItemClick = async (n) => {
     try {
       if (!n.isRead) {
+        setNotifications((prev) =>
+          prev.map((item) => (item._id === n._id ? { ...item, isRead: true } : item))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
         await api.put(`/notifications/${n._id}/read`);
       }
       const targetRoute = n.route || n.link;
@@ -154,22 +158,29 @@ const NotificationsCenterPage = () => {
   const handleMarkRead = async (e, id) => {
     e.stopPropagation();
     try {
+      setNotifications((prev) =>
+        prev.map((item) => (item._id === id ? { ...item, isRead: true } : item))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
       await api.put(`/notifications/${id}/read`);
       addToast('Notification marked as read', 'success');
-      fetchNotifications();
     } catch (e) {
       addToast('Operation failed', 'danger');
+      fetchNotifications();
     }
   };
 
   // Mark All Read
   const handleMarkAllRead = async () => {
     try {
+      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+      setUnreadCount(0);
       await api.put('/notifications/read-all');
       addToast('All notifications marked as read', 'success');
       fetchNotifications();
     } catch (e) {
       addToast('Operation failed', 'danger');
+      fetchNotifications();
     }
   };
 

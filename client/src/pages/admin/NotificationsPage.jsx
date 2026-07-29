@@ -15,7 +15,7 @@ const NotificationsPage = () => {
   const fetchNotifications = async () => {
     try {
       const res = await api.get('/notifications');
-      setNotifications(res.data.data);
+      setNotifications(res.data.data || []);
     } catch (err) {
       addToast('Failed to fetch notifications', 'danger');
     } finally {
@@ -29,11 +29,15 @@ const NotificationsPage = () => {
 
   const handleNotificationClick = async (n) => {
     try {
-      if (!n.read) {
+      if (!n.isRead) {
+        setNotifications((prev) =>
+          prev.map((item) => (item._id === n._id ? { ...item, isRead: true } : item))
+        );
         await api.put(`/notifications/${n._id}/read`);
       }
-      if (n.link) {
-        navigate(n.link);
+      const targetRoute = n.route || n.link;
+      if (targetRoute) {
+        navigate(targetRoute);
       } else {
         fetchNotifications();
       }
@@ -44,6 +48,7 @@ const NotificationsPage = () => {
 
   const handleMarkAllRead = async () => {
     try {
+      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
       await api.put('/notifications/read-all');
       addToast('All notifications marked as read', 'success');
       fetchNotifications();
@@ -80,7 +85,7 @@ const NotificationsPage = () => {
                 style={{
                   padding: '18px 24px',
                   borderBottom: '1px solid var(--border-color)',
-                  background: n.read ? 'transparent' : 'var(--primary-light)',
+                  background: n.isRead ? 'transparent' : 'var(--primary-light)',
                   display: 'flex',
                   alignItems: 'flex-start',
                   justifyContent: 'space-between',
@@ -108,7 +113,7 @@ const NotificationsPage = () => {
                   <div>
                     <div className="flex-row" style={{ gap: '8px' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{n.title}</div>
-                      {n.link && <ExternalLink size={14} color="var(--primary)" />}
+                      {(n.route || n.link) && <ExternalLink size={14} color="var(--primary)" />}
                     </div>
                     <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                       {n.message}

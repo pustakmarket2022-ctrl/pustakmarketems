@@ -78,6 +78,7 @@ const todoRoutes = require('./routes/todoRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const noteRoutes = require('./routes/noteRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 // Mount Routers
 app.use('/api/auth', authRoutes);
@@ -96,6 +97,7 @@ app.use('/api/todos', todoRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {

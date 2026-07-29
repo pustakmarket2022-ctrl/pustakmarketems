@@ -108,6 +108,7 @@ function App() {
                   <Route path="/admin/advances" element={<AdvancePage />} />
                   <Route path="/admin/meetings" element={<MeetingsPage />} />
                   <Route path="/admin/discussion" element={<GroupDiscussionPage />} />
+                  <Route path="/admin/leaderboard" element={<LeaderboardPage />} />
                   <Route path="/admin/reports" element={<ReportsPage />} />
                   <Route path="/admin/notifications" element={<NotificationsPage />} />
                   <Route path="/admin/settings" element={<SettingsPage />} />
@@ -120,6 +121,7 @@ function App() {
                   <Route path="/employee/advances" element={<MyAdvancePage />} />
                   <Route path="/employee/meetings" element={<MeetingsPage />} />
                   <Route path="/employee/discussion" element={<GroupDiscussionPage />} />
+                  <Route path="/employee/leaderboard" element={<LeaderboardPage />} />
                   <Route path="/employee/notifications" element={<NotificationsPage />} />
                   <Route path="/employee/profile" element={<MyProfilePage />} />
                 </Route>

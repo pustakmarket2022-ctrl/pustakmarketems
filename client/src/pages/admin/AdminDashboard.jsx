@@ -19,6 +19,7 @@ import {
   MessageSquare,
   ChevronRight,
   ShieldCheck,
+  Trophy,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -268,21 +269,31 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={openBestEmpModal}
-          style={{
-            background: '#ffffff',
-            color: '#d97706',
-            border: 'none',
-            padding: '10px 18px',
-            borderRadius: '8px',
-            fontWeight: 800,
-            cursor: 'pointer',
-          }}
-        >
-          Select Best Employee
-        </button>
+        <div className="flex-row" style={{ gap: '10px' }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => navigate('/admin/leaderboard')}
+            style={{ color: '#fff', borderColor: '#fff' }}
+          >
+            <Trophy size={16} /> Leaderboard Standings
+          </button>
+          <button
+            type="button"
+            onClick={openBestEmpModal}
+            style={{
+              background: '#ffffff',
+              color: '#d97706',
+              border: 'none',
+              padding: '10px 18px',
+              borderRadius: '8px',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            Select Best Employee
+          </button>
+        </div>
       </div>
 
       {/* Clickable Stat Cards Grid */}

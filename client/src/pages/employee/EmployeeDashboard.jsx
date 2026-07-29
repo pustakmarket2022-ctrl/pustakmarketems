@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, DollarSign, Clock, BookOpen, Award, CreditCard, Calendar } from 'lucide-react';
+import { CheckSquare, DollarSign, Clock, BookOpen, Award, CreditCard, Calendar, Trophy } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import StatCard from '../../components/common/StatCard';
 import ClockInWidget from '../../components/common/ClockInWidget';
@@ -45,13 +45,16 @@ const EmployeeDashboard = () => {
 
   return (
     <div className="page-container">
-      <div className="page-header">
+      <div className="page-header flex-row" style={{ justifyContent: 'space-between' }}>
         <div>
           <h1 className="page-title">Welcome back, {user?.fullName}!</h1>
           <p className="page-subtitle">
             {user?.designation} • {user?.department} Department ({user?.salaryType} Salary Model)
           </p>
         </div>
+        <button className="btn btn-primary" onClick={() => navigate('/employee/leaderboard')}>
+          <Trophy size={18} /> View Performance Leaderboard
+        </button>
       </div>
 
       {/* Best Employee Highlight Banner */}
@@ -65,21 +68,28 @@ const EmployeeDashboard = () => {
             padding: '20px 24px',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '16px',
+            flexWrap: 'wrap',
           }}
         >
-          <Award size={36} color="#fbbf24" />
-          <div>
-            <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 800, color: '#fbbf24' }}>
-              BEST EMPLOYEE OF THE MONTH
-            </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '2px' }}>
-              {bestEmpUser.fullName} ({bestEmpUser.designation} - {bestEmpUser.department})
-            </div>
-            <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
-              {bestEmp.reason || 'Outstanding performance & dedication.'}
+          <div className="flex-row" style={{ gap: '16px' }}>
+            <Award size={36} color="#fbbf24" />
+            <div>
+              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 800, color: '#fbbf24' }}>
+                BEST EMPLOYEE OF THE MONTH
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '2px' }}>
+                {bestEmpUser.fullName} ({bestEmpUser.designation} - {bestEmpUser.department})
+              </div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                {bestEmp.reason || 'Outstanding performance & dedication.'}
+              </div>
             </div>
           </div>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/employee/leaderboard')} style={{ color: '#fff', borderColor: '#fff' }}>
+            <Trophy size={16} /> Leaderboard Rankings
+          </button>
         </div>
       )}
 

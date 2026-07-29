@@ -32,9 +32,11 @@ const EditSalaryModal = ({ isOpen, onClose, onSave, salary = null }) => {
         0,
         (salary.fixedSalary || 0) +
           (salary.taskIncentive || 0) +
+          (salary.overtimeAmount || 0) +
           Number(bonus || 0) -
           Number(penalty || 0) -
-          Number(advanceSalary || 0)
+          Number(advanceSalary || 0) -
+          (salary.pendingAdvance || 0)
       )
     : 0;
 

@@ -298,10 +298,10 @@ const SalarySlipModal = ({ salary, onClose }) => {
                   {pendingAdvanceAmount > 0 && (
                     <tr style={{ background: '#fffbeb' }}>
                       <td style={{ padding: '6px 8px', color: '#b45309', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <AlertCircle size={14} color="#b45309" /> Pending Advance Balance:
+                        <AlertCircle size={14} color="#b45309" /> Pending Advance (Deducted):
                       </td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#b45309' }}>
-                        ₹{pendingAdvanceAmount.toLocaleString('en-IN')}
+                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#dc2626' }}>
+                        -₹{pendingAdvanceAmount.toLocaleString('en-IN')}
                       </td>
                     </tr>
                   )}
@@ -314,7 +314,7 @@ const SalarySlipModal = ({ salary, onClose }) => {
                   <tr style={{ borderTop: '1px solid #cbd5e1', fontWeight: 700 }}>
                     <td style={{ padding: '8px 0', color: '#dc2626' }}>Total Deductions:</td>
                     <td style={{ padding: '8px 0', textAlign: 'right', color: '#dc2626', fontSize: '0.95rem' }}>
-                      -₹{((salary.advanceSalary || 0) + (salary.penalty || 0)).toLocaleString('en-IN')}
+                      -₹{((salary.advanceSalary || 0) + pendingAdvanceAmount + (salary.penalty || 0)).toLocaleString('en-IN')}
                     </td>
                   </tr>
                 </tbody>
@@ -323,30 +323,38 @@ const SalarySlipModal = ({ salary, onClose }) => {
           </div>
 
           {/* 3. Final Net Salary Payable Banner */}
-          <div
-            style={{
-              padding: '16px 20px',
-              background: '#f0f9ff',
-              border: '2px dashed #0284c7',
-              borderRadius: '8px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '24px',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#0369a1', fontWeight: 800 }}>
-                FINAL NET SALARY PAYABLE
+          {(() => {
+            const gross = (salary.fixedSalary || 0) + (salary.taskIncentive || 0) + (salary.overtimeAmount || 0) + (salary.bonus || 0);
+            const deductions = (salary.advanceSalary || 0) + pendingAdvanceAmount + (salary.penalty || 0);
+            const netPayable = Math.max(0, gross - deductions);
+
+            return (
+              <div
+                style={{
+                  padding: '16px 20px',
+                  background: '#f0f9ff',
+                  border: '2px dashed #0284c7',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '24px',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#0369a1', fontWeight: 800 }}>
+                    FINAL NET SALARY PAYABLE
+                  </div>
+                  <div style={{ fontSize: '0.775rem', color: '#64748b', marginTop: '2px' }}>
+                    Formula: Gross Earnings - Total Deductions (Advance + Pending Advance + Penalty)
+                  </div>
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0369a1' }}>
+                  ₹{netPayable.toLocaleString('en-IN')}
+                </div>
               </div>
-              <div style={{ fontSize: '0.775rem', color: '#64748b', marginTop: '2px' }}>
-                Formula: (Fixed + Task Payouts + Overtime + Bonus) - (Advance Deducted + Penalty)
-              </div>
-            </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0369a1' }}>
-              ₹{(salary.totalEarnings || 0).toLocaleString('en-IN')}
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Signatures & Footer */}
           <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#64748b' }}>

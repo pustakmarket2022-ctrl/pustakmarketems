@@ -15,6 +15,7 @@ import {
   CreditCard,
   Calendar,
   MessageSquare,
+  Trophy,
   X,
 } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
@@ -35,6 +36,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     { label: 'Advances', path: '/admin/advances', icon: CreditCard },
     { label: 'Meetings', path: '/admin/meetings', icon: Calendar },
     { label: 'Discussions', path: '/admin/discussion', icon: MessageSquare },
+    { label: 'Leaderboard', path: '/admin/leaderboard', icon: Trophy },
     { label: t('reports') || 'Reports', path: '/admin/reports', icon: FileBarChart2 },
     { label: t('notifications') || 'Notifications', path: '/admin/notifications', icon: Bell },
     { label: t('settings') || 'Settings', path: '/admin/settings', icon: Settings },
@@ -48,6 +50,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     { label: 'My Advances', path: '/employee/advances', icon: CreditCard },
     { label: 'Meetings', path: '/employee/meetings', icon: Calendar },
     { label: 'Discussions', path: '/employee/discussion', icon: MessageSquare },
+    { label: 'Leaderboard', path: '/employee/leaderboard', icon: Trophy },
     { label: t('notifications') || 'Notifications', path: '/employee/notifications', icon: Bell },
     { label: t('myProfile') || 'My Profile', path: '/employee/profile', icon: User },
   ];

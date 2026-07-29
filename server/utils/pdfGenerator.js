@@ -243,8 +243,12 @@ const generateSalarySlipPDF = (salaryData, res) => {
   }
 
   if (salaryData.pendingAdvance > 0) {
-    addSummaryRow('Pending Advance Balance (Remaining)', salaryData.pendingAdvance || 0, true, true);
+    addSummaryRow('Pending Advance Balance (Deducted)', salaryData.pendingAdvance || 0, true, true);
   }
+
+  const grossEarningsVal = (salaryData.fixedSalary || 0) + (salaryData.taskIncentive || 0) + (salaryData.overtimeAmount || 0) + (salaryData.bonus || 0);
+  const totalDeductionsVal = (salaryData.penalty || 0) + (salaryData.advanceSalary || 0) + (salaryData.pendingAdvance || 0);
+  const netPayableVal = Math.max(0, grossEarningsVal - totalDeductionsVal);
 
   // 5. Total Net Payable Box
   currentY += 10;
@@ -260,7 +264,7 @@ const generateSalarySlipPDF = (salaryData, res) => {
     .font('Helvetica-Bold')
     .text('FINAL NET SALARY PAYABLE', 52, currentY + 11)
     .fontSize(13)
-    .text(`Rs. ${Number(salaryData.totalEarnings || 0).toLocaleString('en-IN')}`, 430, currentY + 10, {
+    .text(`Rs. ${Number(netPayableVal).toLocaleString('en-IN')}`, 430, currentY + 10, {
       align: 'right',
       width: 132,
     });
