@@ -77,3 +77,22 @@
   --glass-bg: rgba(255, 255, 255, 0.8);
   --glass-border: rgba(0, 0, 0, 0.06);
 }
+
+/* Dynamic Landing Page Theme Preset Utility Animations & Styles */
+@keyframes landingPulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.landing-glow-effect {
+  animation: landingPulseGlow 6s ease-in-out infinite;
+}
+
+.theme-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
