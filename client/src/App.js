@@ -45,6 +45,7 @@ import MyProfilePage from './pages/employee/MyProfilePage';
 // Shared Feature Modules
 import MeetingsPage from './pages/MeetingsPage';
 import GroupDiscussionPage from './pages/GroupDiscussionPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 // Public Landing & Tracking Pages
 import LandingPage from './pages/public/LandingPage';
