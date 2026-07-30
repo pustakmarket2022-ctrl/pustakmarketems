@@ -18,7 +18,7 @@ const logAudit = require('../utils/auditLogger');
 // @access  Private
 exports.getTasks = async (req, res, next) => {
   try {
-    const { project, assignedTo, taskStatus, paymentStatus, priority, search, page = 1, limit = 10 } = req.query;
+    const { project, assignedTo, taskStatus, paymentStatus, priority, search, sortBy, page = 1, limit = 10 } = req.query;
     const query = {};
 
     if (project) query.project = project;
@@ -39,13 +39,22 @@ exports.getTasks = async (req, res, next) => {
       ];
     }
 
+    let sortOptions = { createdAt: -1, _id: -1 };
+    if (sortBy === 'createdAt_asc') {
+      sortOptions = { createdAt: 1, _id: 1 };
+    } else if (sortBy === 'deadline_asc') {
+      sortOptions = { deadline: 1, _id: 1 };
+    } else if (sortBy === 'deadline_desc') {
+      sortOptions = { deadline: -1, _id: -1 };
+    }
+
     const skip = (page - 1) * limit;
     const total = await Task.countDocuments(query);
     const tasks = await Task.find(query)
       .populate('project', 'projectName bookName projectId')
       .populate('assignedTo', 'fullName email employeeId profileImage department')
       .populate('comments.user', 'fullName profileImage role')
-      .sort({ createdAt: -1 })
+      .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
 

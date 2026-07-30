@@ -29,6 +29,7 @@ const TasksPage = () => {
   const [search, setSearch] = useState('');
   const [taskStatus, setTaskStatus] = useState('');
   const [selectedEmp, setSelectedEmp] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt_desc');
 
   // Modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -54,6 +55,7 @@ const TasksPage = () => {
         search,
         taskStatus: taskStatus === 'All Statuses' ? '' : taskStatus,
         assignedTo: selectedEmp,
+        sortBy,
         limit: 10,
       });
       setTasks(res.data);
@@ -64,7 +66,7 @@ const TasksPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, search, taskStatus, selectedEmp, addToast]);
+  }, [currentPage, search, taskStatus, selectedEmp, sortBy, addToast]);
 
   useEffect(() => {
     fetchDependencies();
@@ -190,6 +192,20 @@ const TasksPage = () => {
         <div className="flex-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
           <select
             className="form-select"
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="createdAt_desc">📅 Assign Date: Latest First</option>
+            <option value="createdAt_asc">📅 Assign Date: Oldest First</option>
+            <option value="deadline_asc">⏰ Deadline: Earliest First</option>
+            <option value="deadline_desc">⏰ Deadline: Latest First</option>
+          </select>
+
+          <select
+            className="form-select"
             value={selectedEmp}
             onChange={(e) => {
               setSelectedEmp(e.target.value);
@@ -225,6 +241,8 @@ const TasksPage = () => {
                 <th>Task Title</th>
                 <th>Project</th>
                 <th>Assigned Staff</th>
+                <th>Assign Date</th>
+                <th>Deadline</th>
                 <th>Payment</th>
                 <th>Working File</th>
                 <th>Priority</th>
@@ -235,7 +253,7 @@ const TasksPage = () => {
             <tbody>
               {tasks.length === 0 ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                  <td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                     No tasks found.
                   </td>
                 </tr>
@@ -275,6 +293,28 @@ const TasksPage = () => {
                     </td>
                     <td>
                       {(taskItem.assignedTo || []).map((u) => u.fullName).join(', ') || 'Unassigned'}
+                    </td>
+                    <td>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>
+                        {taskItem.createdAt ? new Date(taskItem.createdAt).toLocaleDateString('en-IN') : 'N/A'}
+                      </div>
+                    </td>
+                    <td>
+                      <div
+                        style={{
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          color:
+                            taskItem.deadline && new Date(taskItem.deadline) < new Date() && taskItem.taskStatus !== 'Completed' && taskItem.taskStatus !== 'Approved'
+                              ? '#dc2626'
+                              : 'inherit',
+                        }}
+                      >
+                        {taskItem.deadline ? new Date(taskItem.deadline).toLocaleDateString('en-IN') : 'N/A'}
+                        {taskItem.deadline && new Date(taskItem.deadline) < new Date() && taskItem.taskStatus !== 'Completed' && taskItem.taskStatus !== 'Approved' && (
+                          <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 700 }}>Overdue</div>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <strong style={{ color: 'var(--success)' }}>₹{(taskItem.taskPaymentAmount || 0).toLocaleString('en-IN')}</strong>
