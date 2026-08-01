@@ -159,7 +159,7 @@ const parseDateTime = (dateStr, timeOrIso) => {
 // @access  Private (Admin / Super Admin / HR)
 exports.editAttendance = async (req, res, next) => {
   try {
-    const { status, checkIn, checkOut, reason, notes, workingHours } = req.body;
+    const { status, checkIn, checkOut, reason, notes, workingHours, resetTimes } = req.body;
     const attendance = await Attendance.findById(req.params.id);
 
     if (!attendance) {
@@ -171,14 +171,27 @@ exports.editAttendance = async (req, res, next) => {
     const previousCheckOut = attendance.checkOut;
 
     if (status) attendance.status = status;
-    if (checkIn) attendance.checkIn = parseDateTime(attendance.date, checkIn) || attendance.checkIn;
-    if (checkOut) attendance.checkOut = parseDateTime(attendance.date, checkOut) || attendance.checkOut;
-    if (notes !== undefined) attendance.notes = notes;
-    if (workingHours !== undefined) attendance.workingHours = Number(workingHours);
 
-    if (attendance.checkIn && attendance.checkOut && workingHours === undefined) {
+    if (resetTimes || checkIn === 'clear' || checkIn === null) {
+      attendance.checkIn = null;
+      attendance.checkOut = null;
+      attendance.workingHours = 0;
+    } else {
+      if (checkIn && checkIn !== 'clear') {
+        attendance.checkIn = parseDateTime(attendance.date, checkIn) || attendance.checkIn;
+      }
+      if (checkOut && checkOut !== 'clear') {
+        attendance.checkOut = parseDateTime(attendance.date, checkOut) || attendance.checkOut;
+      }
+    }
+
+    if (notes !== undefined) attendance.notes = notes;
+
+    if (attendance.checkIn && attendance.checkOut && (workingHours === undefined || workingHours === '')) {
       const diffMs = new Date(attendance.checkOut) - new Date(attendance.checkIn);
       attendance.workingHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2));
+    } else if (workingHours !== undefined && workingHours !== '') {
+      attendance.workingHours = Number(workingHours);
     }
 
     attendance.editHistory.push({
@@ -222,7 +235,7 @@ exports.editAttendance = async (req, res, next) => {
 // @access  Private (Admin / Super Admin)
 exports.markAttendanceManual = async (req, res, next) => {
   try {
-    const { userId, date, status, checkIn, checkOut, workingHours, notes, reason } = req.body;
+    const { userId, date, status, checkIn, checkOut, workingHours, notes, reason, resetTimes } = req.body;
     if (!userId || !date) {
       return res.status(400).json({ success: false, message: 'Please select an employee and date' });
     }
@@ -240,9 +253,27 @@ exports.markAttendanceManual = async (req, res, next) => {
     }
 
     if (status) attendance.status = status;
-    if (checkIn) attendance.checkIn = parseDateTime(dateStr, checkIn) || attendance.checkIn;
-    if (checkOut) attendance.checkOut = parseDateTime(dateStr, checkOut) || attendance.checkOut;
-    if (workingHours !== undefined) attendance.workingHours = Number(workingHours);
+
+    if (resetTimes || checkIn === 'clear' || checkIn === null) {
+      attendance.checkIn = null;
+      attendance.checkOut = null;
+      attendance.workingHours = 0;
+    } else {
+      if (checkIn && checkIn !== 'clear') {
+        attendance.checkIn = parseDateTime(dateStr, checkIn) || attendance.checkIn;
+      }
+      if (checkOut && checkOut !== 'clear') {
+        attendance.checkOut = parseDateTime(dateStr, checkOut) || attendance.checkOut;
+      }
+    }
+
+    if (attendance.checkIn && attendance.checkOut && (workingHours === undefined || workingHours === '')) {
+      const diffMs = new Date(attendance.checkOut) - new Date(attendance.checkIn);
+      attendance.workingHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2));
+    } else if (workingHours !== undefined && workingHours !== '') {
+      attendance.workingHours = Number(workingHours);
+    }
+
     if (notes) attendance.notes = notes;
 
     attendance.editHistory.push({

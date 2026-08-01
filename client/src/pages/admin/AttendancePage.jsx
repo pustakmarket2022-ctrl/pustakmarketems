@@ -99,11 +99,12 @@ const AttendancePage = () => {
         userId: log.user?._id || log.user,
         date: log.date || new Date().toISOString().split('T')[0],
         status: log.status || 'Present',
-        checkIn: formatLocalTime(log.checkIn) || '09:30',
+        checkIn: formatLocalTime(log.checkIn) || '11:00',
         checkOut: formatLocalTime(log.checkOut) || '18:30',
-        workingHours: log.workingHours || 8,
+        workingHours: log.workingHours || 7.5,
         reason: 'Admin Presenty Update',
         notes: log.notes || '',
+        resetTimes: false,
       });
     } else {
       setSelectedLog(null);
@@ -111,11 +112,12 @@ const AttendancePage = () => {
         userId: employees[0]?._id || '',
         date: new Date().toISOString().split('T')[0],
         status: 'Present',
-        checkIn: '09:30',
+        checkIn: '11:00',
         checkOut: '18:30',
-        workingHours: 9,
+        workingHours: 7.5,
         reason: 'Admin Manual Entry',
         notes: '',
+        resetTimes: false,
       });
     }
     setIsEditModalOpen(true);
@@ -457,6 +459,47 @@ const AttendancePage = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Check-In Time</label>
+              <input
+                type="time"
+                className="form-input"
+                value={editForm.checkIn}
+                onChange={(e) => setEditForm({ ...editForm, checkIn: e.target.value, resetTimes: false })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Check-Out Time</label>
+              <input
+                type="time"
+                className="form-input"
+                value={editForm.checkOut}
+                onChange={(e) => setEditForm({ ...editForm, checkOut: e.target.value, resetTimes: false })}
+              />
+            </div>
+          </div>
+
+          <div className="flex-row" style={{ gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              style={{ fontSize: '0.78rem' }}
+              onClick={() => setEditForm({ ...editForm, checkIn: '11:00', checkOut: '18:30', workingHours: 7.5, resetTimes: false })}
+            >
+              ⏰ Preset Default Shift (11:00 AM - 06:30 PM)
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              style={{ fontSize: '0.78rem' }}
+              onClick={() => setEditForm({ ...editForm, checkIn: '', checkOut: '', workingHours: 0, resetTimes: true })}
+            >
+              🗑️ Clear / Reset Check-In & Out Times
+            </button>
           </div>
 
           <div className="grid-2">
