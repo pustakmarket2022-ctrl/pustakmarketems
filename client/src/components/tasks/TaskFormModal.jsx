@@ -15,7 +15,7 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     pageCount: 0,
     ratePerPage: 0,
-    taskPaymentAmount: 2500,
+    taskPaymentAmount: 0,
     description: '',
   });
 
@@ -62,7 +62,7 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
         deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         pageCount: 0,
         ratePerPage: 0,
-        taskPaymentAmount: 2500,
+        taskPaymentAmount: 0,
         description: '',
       });
     }
@@ -292,15 +292,14 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
           </div>
 
           <div className="form-group">
-            <label className="form-label">Total Task Payout (₹) *</label>
+            <label className="form-label">Total Task Payout (₹) (Optional)</label>
             <input
               type="number"
               name="taskPaymentAmount"
               className="form-input"
               value={formData.taskPaymentAmount}
               onChange={handleChange}
-              placeholder="e.g. 100"
-              required
+              placeholder="Optional (e.g. 100)"
             />
           </div>
 
