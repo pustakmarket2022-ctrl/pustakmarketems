@@ -45,7 +45,11 @@ const sendEmail = async ({ to, subject, html, eventType = 'General' }) => {
 
   try {
     const transporter = createTransporter();
-    const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER || 'no-reply@pustakmarket.com';
+    let fromEmail = process.env.FROM_EMAIL;
+    if (!fromEmail || !fromEmail.includes('@')) {
+      fromEmail = process.env.SMTP_USER || process.env.BREVO_SMTP_USER || 'b407d5001@smtp-brevo.com';
+    }
+    const fromName = (process.env.FROM_NAME || 'Pustak Market EMS').replace(/^"|"$/g, '');
 
     if (!transporter) {
       console.log(`[Email Service]: Simulation Mode. Email to ${to} (${subject}) recorded in EmailLogs.`);
@@ -60,7 +64,7 @@ const sendEmail = async ({ to, subject, html, eventType = 'General' }) => {
     }
 
     const info = await transporter.sendMail({
-      from: `"Pustak Market EMS" <${fromEmail}>`,
+      from: `"${fromName}" <${fromEmail}>`,
       to,
       subject,
       html,
