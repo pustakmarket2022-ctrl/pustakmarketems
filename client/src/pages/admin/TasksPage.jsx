@@ -318,6 +318,11 @@ const TasksPage = () => {
                     </td>
                     <td>
                       <strong style={{ color: 'var(--success)' }}>₹{(taskItem.taskPaymentAmount || 0).toLocaleString('en-IN')}</strong>
+                      {taskItem.pageCount > 0 && taskItem.ratePerPage > 0 && (
+                        <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          ({taskItem.pageCount} pgs × ₹{taskItem.ratePerPage}/pg)
+                        </div>
+                      )}
                     </td>
                     <td>
                       {taskItem.attachments && taskItem.attachments.length > 0 ? (

@@ -46,6 +46,14 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    pageCount: {
+      type: Number,
+      default: 0,
+    },
+    ratePerPage: {
+      type: Number,
+      default: 0,
+    },
     taskPaymentAmount: {
       type: Number,
       default: 0,

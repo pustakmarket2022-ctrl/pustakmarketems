@@ -13,6 +13,8 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
     priority: 'Medium',
     estimatedHours: 10,
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    pageCount: 0,
+    ratePerPage: 0,
     taskPaymentAmount: 2500,
     description: '',
   });
@@ -45,6 +47,8 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
         priority: initialData.priority || 'Medium',
         estimatedHours: initialData.estimatedHours || 10,
         deadline: initialData.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : '',
+        pageCount: initialData.pageCount || 0,
+        ratePerPage: initialData.ratePerPage || 0,
         taskPaymentAmount: initialData.taskPaymentAmount || 0,
         description: initialData.description || '',
       });
@@ -56,6 +60,8 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
         priority: 'Medium',
         estimatedHours: 10,
         deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        pageCount: 0,
+        ratePerPage: 0,
         taskPaymentAmount: 2500,
         description: '',
       });
@@ -64,7 +70,17 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'pageCount' || name === 'ratePerPage') {
+        const pages = Number(name === 'pageCount' ? value : prev.pageCount || 0);
+        const rate = Number(name === 'ratePerPage' ? value : prev.ratePerPage || 0);
+        if (pages > 0 && rate > 0) {
+          updated.taskPaymentAmount = pages * rate;
+        }
+      }
+      return updated;
+    });
   };
 
   const handleQuickProjectChange = (e) => {
@@ -250,16 +266,66 @@ const TaskFormModal = ({ isOpen, onClose, onSubmit, projects = [], employees = [
           </div>
 
           <div className="form-group">
-            <label className="form-label">Payment Amount (₹)</label>
+            <label className="form-label">Page Count / Quantity</label>
+            <input
+              type="number"
+              name="pageCount"
+              className="form-input"
+              value={formData.pageCount}
+              onChange={handleChange}
+              placeholder="e.g. 10 pages"
+              min="0"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Rate Per Page (₹/Page)</label>
+            <input
+              type="number"
+              name="ratePerPage"
+              className="form-input"
+              value={formData.ratePerPage}
+              onChange={handleChange}
+              placeholder="e.g. 10 ₹"
+              min="0"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Total Task Payout (₹) *</label>
             <input
               type="number"
               name="taskPaymentAmount"
               className="form-input"
               value={formData.taskPaymentAmount}
               onChange={handleChange}
+              placeholder="e.g. 100"
               required
             />
           </div>
+
+          {Number(formData.pageCount) > 0 && Number(formData.ratePerPage) > 0 && (
+            <div
+              style={{
+                gridColumn: 'span 2',
+                padding: '10px 14px',
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid var(--success)',
+                color: 'var(--success)',
+                borderRadius: '8px',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>📄 Per-Page Rate Calculation:</span>
+              <span>
+                {formData.pageCount} pages × ₹{formData.ratePerPage}/page = <strong>₹{formData.taskPaymentAmount} Total</strong>
+              </span>
+            </div>
+          )}
 
           <div className="form-group" style={{ gridColumn: 'span 2' }}>
             <label className="form-label">Task Deadline *</label>

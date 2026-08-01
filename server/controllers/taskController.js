@@ -126,8 +126,18 @@ exports.createTask = async (req, res, next) => {
       taskCategory = 'General Office Work';
     }
 
+    let pageCount = Number(req.body.pageCount) || 0;
+    let ratePerPage = Number(req.body.ratePerPage) || 0;
+    let taskPaymentAmount = Number(req.body.taskPaymentAmount) || 0;
+    if (pageCount > 0 && ratePerPage > 0) {
+      taskPaymentAmount = pageCount * ratePerPage;
+    }
+
     const task = await Task.create({
       ...req.body,
+      pageCount,
+      ratePerPage,
+      taskPaymentAmount,
       project,
       taskCategory,
       assignedTo: assignedTo || [],
@@ -135,25 +145,30 @@ exports.createTask = async (req, res, next) => {
       attachments: initialAttachments,
     });
 
-    // Notify & email assigned employees
-    const assignedList = Array.isArray(task.assignedTo) ? task.assignedTo : [];
-    for (const empId of assignedList) {
-      const emp = await User.findById(empId);
-      if (emp) {
-        await createAndEmitNotification(req.app, {
-          userId: emp._id,
-          senderId: req.user.id,
-          title: 'New Task Assigned',
-          message: `You have been assigned to task '${task.taskTitle}' (${task.taskId}).`,
-          type: 'Task',
-          referenceId: task._id,
-          referenceModel: 'Task',
-          route: '/employee/tasks',
-          priority: task.priority === 'Urgent' || task.priority === 'High' ? 'High' : 'Medium',
-        });
+    // Notify & email assigned employees (or all active employees if unassigned/general)
+    let assignedList = Array.isArray(task.assignedTo) ? task.assignedTo : [];
+    let employeesToNotify = [];
 
-        sendTaskAssignedEmail(emp, task, req.user);
-      }
+    if (assignedList.length > 0) {
+      employeesToNotify = await User.find({ _id: { $in: assignedList } });
+    } else {
+      employeesToNotify = await User.find({ status: 'Active' });
+    }
+
+    for (const emp of employeesToNotify) {
+      await createAndEmitNotification(req.app, {
+        userId: emp._id,
+        senderId: req.user.id,
+        title: 'New Task Created',
+        message: `New task '${task.taskTitle}' (${task.taskId}) has been created.`,
+        type: 'Task',
+        referenceId: task._id,
+        referenceModel: 'Task',
+        route: emp.role === 'Admin' ? '/admin/tasks' : '/employee/tasks',
+        priority: task.priority === 'Urgent' || task.priority === 'High' ? 'High' : 'Medium',
+      });
+
+      sendTaskAssignedEmail(emp, task, req.user);
     }
 
     logAudit({ user: req.user.id, action: 'Task Created', details: `Created task ${task.taskTitle} (${task.taskId})`, req });
@@ -208,6 +223,14 @@ exports.updateTask = async (req, res, next) => {
       updateBody.attachments = existingAtts;
     }
 
+    if (updateBody.pageCount !== undefined || updateBody.ratePerPage !== undefined) {
+      const pageCount = Number(updateBody.pageCount !== undefined ? updateBody.pageCount : oldTask.pageCount) || 0;
+      const ratePerPage = Number(updateBody.ratePerPage !== undefined ? updateBody.ratePerPage : oldTask.ratePerPage) || 0;
+      if (pageCount > 0 && ratePerPage > 0) {
+        updateBody.taskPaymentAmount = pageCount * ratePerPage;
+      }
+    }
+
     const task = await Task.findByIdAndUpdate(req.params.id, updateBody, {
       new: true,
       runValidators: true,
@@ -215,12 +238,32 @@ exports.updateTask = async (req, res, next) => {
       .populate('project', 'projectName bookName projectId')
       .populate('assignedTo', 'fullName email employeeId profileImage department');
 
-    // Notify assigned employees
-    for (const emp of task.assignedTo) {
+    // Determine targets to notify: assigned employees or all active employees
+    let targetsToNotify = Array.isArray(task.assignedTo) && task.assignedTo.length > 0 ? task.assignedTo : [];
+    if (targetsToNotify.length === 0) {
+      targetsToNotify = await User.find({ status: 'Active' });
+    }
+
+    // Broadcast in-app and email notifications to everyone relevant
+    for (const emp of targetsToNotify) {
+      await createAndEmitNotification(req.app, {
+        userId: emp._id,
+        senderId: req.user.id,
+        title: isDeadlineChanged ? 'Task Deadline Changed' : 'Task Details Updated',
+        message: isDeadlineChanged
+          ? `Deadline for task '${task.taskTitle}' (${task.taskId}) has been updated to ${new Date(task.deadline).toLocaleDateString()}.`
+          : `Task '${task.taskTitle}' (${task.taskId}) has been updated. Status: ${task.taskStatus}, Progress: ${task.progressPercentage || 0}%.`,
+        type: 'Task',
+        referenceId: task._id,
+        referenceModel: 'Task',
+        route: emp.role === 'Admin' ? '/admin/tasks' : '/employee/tasks',
+        priority: task.priority === 'Urgent' || task.priority === 'High' ? 'High' : 'Medium',
+      });
+
       if (isDeadlineChanged) {
         sendTaskDeadlineChangedEmail(emp, task);
       } else {
-        sendTaskUpdatedEmail(emp, task);
+        sendTaskUpdatedEmail(emp, task, req.user);
       }
     }
 

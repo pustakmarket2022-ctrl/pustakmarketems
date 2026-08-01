@@ -147,6 +147,11 @@ const MyTasksPage = () => {
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Payout Amount: </span>
                     <strong style={{ color: 'var(--success)' }}>₹{(t.taskPaymentAmount || 0).toLocaleString('en-IN')}</strong>
+                    {t.pageCount > 0 && t.ratePerPage > 0 && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                        ({t.pageCount} pgs × ₹{t.ratePerPage})
+                      </span>
+                    )}
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Deadline: </span>

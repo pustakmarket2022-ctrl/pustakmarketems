@@ -1,12 +1,17 @@
 const nodemailer = require('nodemailer');
 const EmailLog = require('../models/EmailLog');
 
-// Create reusable Nodemailer transporter
+// Create reusable Nodemailer transporter (Supports Gmail, Brevo/Sendinblue, and custom SMTP)
 const createTransporter = () => {
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT || '587');
-  const user = process.env.SMTP_USER || process.env.EMAIL_USER || '';
-  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
+  const isBrevo =
+    process.env.EMAIL_SERVICE === 'brevo' ||
+    !!process.env.BREVO_API_KEY ||
+    (process.env.SMTP_HOST && process.env.SMTP_HOST.includes('brevo'));
+
+  const host = process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST || (isBrevo ? 'smtp-relay.brevo.com' : 'smtp.gmail.com');
+  const port = parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT || '587');
+  const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.EMAIL_USER || '';
+  const pass = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
 
   if (!user || !pass) {
     return null;
@@ -17,6 +22,9 @@ const createTransporter = () => {
     port,
     secure: port === 465,
     auth: { user, pass },
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
 };
 
@@ -129,14 +137,26 @@ const sendTaskAssignedEmail = async (employee, task, assignedBy) => {
   return sendEmail({ to: employee.email, subject: `[EMS Task] New Task Assigned: ${task.taskTitle}`, html, eventType: 'TaskAssigned' });
 };
 
-const sendTaskUpdatedEmail = async (employee, task) => {
+const sendTaskUpdatedEmail = async (employee, task, updatedBy) => {
+  const loginUrl = process.env.CLIENT_URL || 'http://localhost:3000/login';
   const html = generateBaseTemplate(
     'Task Details Updated',
-    `<p>Hello <strong>${employee.fullName}</strong>,</p>
-     <p>The details for task <strong>${task.taskTitle}</strong> (${task.taskId}) have been updated.</p>
-     <p>Deadline: ${new Date(task.deadline).toLocaleDateString()} | Status: ${task.taskStatus}</p>`
+    `
+    <p>Hello <strong>${employee.fullName}</strong>,</p>
+    <p>The details for task <strong>${task.taskTitle}</strong> (${task.taskId}) have been updated.</p>
+    <table class="details-table">
+      <tr><td class="label">Task Title:</td><td><strong>${task.taskTitle}</strong></td></tr>
+      <tr><td class="label">Task ID:</td><td>${task.taskId}</td></tr>
+      <tr><td class="label">Status:</td><td><span class="badge">${task.taskStatus}</span></td></tr>
+      <tr><td class="label">Priority:</td><td><span class="badge">${task.priority}</span></td></tr>
+      <tr><td class="label">Progress:</td><td>${task.progressPercentage || 0}%</td></tr>
+      <tr><td class="label">Deadline:</td><td>${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}</td></tr>
+      <tr><td class="label">Updated By:</td><td>${updatedBy?.fullName || 'Admin'}</td></tr>
+    </table>
+    <a href="${loginUrl}" class="btn">View Task Details</a>
+    `
   );
-  return sendEmail({ to: employee.email, subject: `[EMS Task Update] ${task.taskTitle}`, html, eventType: 'TaskUpdated' });
+  return sendEmail({ to: employee.email, subject: `[EMS Task Update] ${task.taskTitle} (${task.taskId})`, html, eventType: 'TaskUpdated' });
 };
 
 const sendTaskDeadlineChangedEmail = async (employee, task) => {
@@ -227,10 +247,16 @@ const sendWelcomeEmail = async (employee, plainPassword) => {
 const sendPasswordResetEmail = async (employee, resetUrl) => {
   const html = generateBaseTemplate(
     'Password Reset Request',
-    `<p>Hello <strong>${employee.fullName}</strong>,</p>
-     <p>You requested a password reset for your Pustak Market EMS account.</p>
-     <p>Click the link below to reset your password. This link is valid for 10 minutes.</p>
-     <a href="${resetUrl}" class="btn">Reset Password</a>`
+    `
+    <p>Hello <strong>${employee.fullName}</strong>,</p>
+    <p>You requested a password reset for your Pustak Market EMS account.</p>
+    <p>Click the button below to reset your password. This link is valid for 10 minutes.</p>
+    <div style="text-align: center; margin: 25px 0;">
+      <a href="${resetUrl}" class="btn">Reset Password</a>
+    </div>
+    <p style="margin-top: 20px; font-size: 13px; color: #6b7280;">If you did not request this, please ignore this email or contact support. Your password will remain unchanged.</p>
+    <p style="font-size: 12px; color: #9ca3af; word-break: break-all;">Link: <a href="${resetUrl}">${resetUrl}</a></p>
+    `
   );
   return sendEmail({ to: employee.email, subject: '[EMS Account] Password Reset Request', html, eventType: 'PasswordReset' });
 };
