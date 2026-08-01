@@ -51,6 +51,46 @@ const sendEmail = async ({ to, subject, html, eventType = 'General' }) => {
     }
     const fromName = (process.env.FROM_NAME || 'Pustak Market EMS').replace(/^"|"$/g, '');
 
+    // Try Brevo HTTP REST API first if an xkeysib- API key is provided
+    const apiKey = process.env.BREVO_API_KEY || process.env.SMTP_PASS;
+    if (apiKey && apiKey.startsWith('xkeysib-')) {
+      try {
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            'api-key': apiKey,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            sender: { name: fromName, email: fromEmail },
+            to: [{ email: to }],
+            subject,
+            htmlContent: html,
+          }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          console.log(`[Email Sent via Brevo API]: ${data.messageId || 'Success'} to ${to}`);
+          await EmailLog.create({ to, subject, eventType, status: 'Sent' });
+          return true;
+        } else {
+          const errMsg = data.message || JSON.stringify(data);
+          console.error(`[Brevo API Error ${response.status}]: ${errMsg}`);
+          await EmailLog.create({ to, subject, eventType, status: 'Failed', error: `Brevo API Error: ${errMsg}` });
+
+          if (errMsg.includes('authorised_ips') || response.status === 401) {
+            console.error(
+              `[Brevo IP Lock]: Brevo is blocking requests from unauthorized IPs. Visit https://app.brevo.com/security/authorised_ips to disable IP restrictions.`
+            );
+          }
+        }
+      } catch (apiErr) {
+        console.error(`[Brevo API Exception]: ${apiErr.message}`);
+      }
+    }
+
     if (!transporter) {
       console.log(`[Email Service]: Simulation Mode. Email to ${to} (${subject}) recorded in EmailLogs.`);
       await EmailLog.create({
@@ -70,7 +110,7 @@ const sendEmail = async ({ to, subject, html, eventType = 'General' }) => {
       html,
     });
 
-    console.log(`[Email Sent]: ${info.messageId} to ${to}`);
+    console.log(`[Email Sent via SMTP]: ${info.messageId} to ${to}`);
     await EmailLog.create({
       to,
       subject,
