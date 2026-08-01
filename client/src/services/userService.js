@@ -49,3 +49,8 @@ export const getDashboardStats = async () => {
   const response = await api.get('/users/dashboard-stats');
   return response.data;
 };
+
+export const adminResetUserPassword = async (userId, newPassword) => {
+  const response = await api.put(`/users/${userId}/reset-password`, { newPassword });
+  return response.data;
+};

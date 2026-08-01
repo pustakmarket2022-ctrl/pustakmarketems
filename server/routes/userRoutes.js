@@ -11,6 +11,7 @@ const {
   getBestEmployee,
   getAuditLogs,
   getDashboardStats,
+  adminResetUserPassword,
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -22,6 +23,7 @@ router.get('/best-employee', getBestEmployee);
 router.post('/best-employee', authorize('Admin'), selectBestEmployee);
 router.get('/audit-logs', authorize('Admin'), getAuditLogs);
 router.put('/:id/restore', authorize('Admin'), restoreUser);
+router.put('/:id/reset-password', authorize('Admin'), adminResetUserPassword);
 
 router
   .route('/')

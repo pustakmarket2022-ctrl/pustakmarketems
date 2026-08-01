@@ -432,3 +432,44 @@ exports.getDashboardStats = async (req, res, next) => {
     next(err);
   }
 };
+
+// @desc    Admin Direct Reset Employee Password
+// @route   PUT /api/users/:id/reset-password
+// @access  Private (Admin / HR / Super Admin)
+exports.adminResetUserPassword = async (req, res, next) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    logAudit({
+      user: req.user.id,
+      action: 'Admin Password Reset',
+      details: `Admin reset password for employee ${user.fullName} (${user.employeeId})`,
+      req,
+    });
+
+    try {
+      sendWelcomeEmail(user, newPassword);
+    } catch (e) {}
+
+    res.status(200).json({
+      success: true,
+      message: `Password for ${user.fullName} has been reset successfully!`,
+      user: { id: user._id, fullName: user.fullName, email: user.email },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

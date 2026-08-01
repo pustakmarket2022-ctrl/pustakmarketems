@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { UserPlus, Search, Edit2, Trash2, Filter } from 'lucide-react';
-import { getUsers, createUser, updateUser, deleteUser } from '../../services/userService';
+import { UserPlus, Search, Edit2, Trash2, Filter, KeyRound, RefreshCw } from 'lucide-react';
+import { getUsers, createUser, updateUser, deleteUser, adminResetUserPassword } from '../../services/userService';
 import EmployeeFormModal from '../../components/employees/EmployeeFormModal';
+import Modal from '../../components/common/Modal';
 import Badge from '../../components/common/Badge';
 import Pagination from '../../components/common/Pagination';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -41,6 +42,12 @@ const EmployeesPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
 
+  // Reset Password Modal State
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [resetTargetEmp, setResetTargetEmp] = useState(null);
+  const [newPassword, setNewPassword] = useState('EMS@123456');
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+
   const fetchEmployees = useCallback(async () => {
     setLoading(true);
     try {
@@ -74,6 +81,36 @@ const EmployeesPage = () => {
   const handleOpenEdit = (emp) => {
     setSelectedEmp(emp);
     setIsModalOpen(true);
+  };
+
+  const handleOpenResetPassword = (emp) => {
+    setResetTargetEmp(emp);
+    setNewPassword('EMS@123456');
+    setIsResetPasswordModalOpen(true);
+  };
+
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!resetTargetEmp || !newPassword) return;
+    setResetSubmitting(true);
+    try {
+      await adminResetUserPassword(resetTargetEmp._id, newPassword);
+      addToast(`Password for ${resetTargetEmp.fullName} reset successfully!`, 'success');
+      setIsResetPasswordModalOpen(false);
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Password reset failed', 'danger');
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$';
+    let pass = '';
+    for (let i = 0; i < 10; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPassword(pass);
   };
 
   const handleFormSubmit = async (formData) => {
@@ -239,6 +276,14 @@ const EmployeesPage = () => {
                           <Edit2 size={14} />
                         </button>
                         <button
+                          className="btn btn-warning btn-sm"
+                          onClick={() => handleOpenResetPassword(emp)}
+                          title="Reset Employee Password"
+                          style={{ background: '#f59e0b', color: '#fff', border: 'none' }}
+                        >
+                          <KeyRound size={14} />
+                        </button>
+                        <button
                           className="btn btn-danger btn-sm"
                           onClick={() => handleDelete(emp._id, emp.fullName)}
                           title="Delete Employee"
@@ -266,6 +311,55 @@ const EmployeesPage = () => {
         initialData={selectedEmp}
         isEdit={!!selectedEmp}
       />
+
+      {/* Admin Direct Reset Password Modal */}
+      <Modal
+        isOpen={isResetPasswordModalOpen}
+        onClose={() => setIsResetPasswordModalOpen(false)}
+        title={`Reset Password for ${resetTargetEmp?.fullName || 'Employee'}`}
+        maxWidth="480px"
+      >
+        <form onSubmit={handleResetPasswordSubmit}>
+          <div style={{ marginBottom: '16px' }}>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+              Set a new password for <strong>{resetTargetEmp?.fullName}</strong> ({resetTargetEmp?.employeeId} - {resetTargetEmp?.email}). An email & notification will automatically be sent to the employee.
+            </p>
+
+            <div className="form-group">
+              <label className="form-label">New Password *</label>
+              <div className="flex-row" style={{ gap: '8px' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm flex-row"
+                  onClick={generateRandomPassword}
+                  title="Generate Random Password"
+                  style={{ whiteSpace: 'nowrap', gap: '4px' }}
+                >
+                  <RefreshCw size={14} /> Auto Generate
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer" style={{ padding: '16px 0 0 0' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => setIsResetPasswordModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={resetSubmitting}>
+              {resetSubmitting ? 'Resetting...' : 'Set New Password'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
