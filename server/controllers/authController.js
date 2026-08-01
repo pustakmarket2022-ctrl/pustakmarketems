@@ -87,9 +87,17 @@ exports.forgotPassword = async (req, res, next) => {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
     const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-    await sendPasswordResetEmail(user, resetUrl);
+    const isSent = await sendPasswordResetEmail(user, resetUrl);
 
-    res.status(200).json({ success: true, message: 'Password reset email sent' });
+    if (!isSent) {
+      return res.status(500).json({
+        success: false,
+        message:
+          'Failed to send password reset email via Brevo. Please ensure your real Brevo API Key is set in SMTP_PASS in .env or Render Environment Variables.',
+      });
+    }
+
+    res.status(200).json({ success: true, message: 'Password reset email sent successfully to your inbox.' });
   } catch (err) {
     next(err);
   }

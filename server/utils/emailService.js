@@ -13,7 +13,16 @@ const createTransporter = () => {
   const user = process.env.BREVO_SMTP_USER || process.env.SMTP_USER || process.env.EMAIL_USER || '';
   const pass = process.env.BREVO_API_KEY || process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
 
-  if (!user || !pass) {
+  const isPlaceholderPass =
+    !pass ||
+    pass.includes('your_brevo_api_key') ||
+    pass.includes('your_gmail_app_password') ||
+    pass.includes('your_api_key');
+
+  if (!user || isPlaceholderPass) {
+    console.warn(
+      `[Email Service Warning]: Real SMTP disabled. SMTP_PASS is missing or using placeholder ('${pass}'). Replace 'your_brevo_api_key_here' with your real Brevo API Key in .env or Render Dashboard.`
+    );
     return null;
   }
 
@@ -39,15 +48,15 @@ const sendEmail = async ({ to, subject, html, eventType = 'General' }) => {
     const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER || 'no-reply@pustakmarket.com';
 
     if (!transporter) {
-      console.log(`[Email Service]: Credentials not configured. Simulating email send to ${to} (${subject})`);
+      console.log(`[Email Service]: Simulation Mode. Email to ${to} (${subject}) recorded in EmailLogs.`);
       await EmailLog.create({
         to,
         subject,
         eventType,
-        status: 'Sent',
-        error: 'Simulated send - No SMTP credentials in .env',
+        status: 'Failed',
+        error: 'Simulated send - No real Brevo API Key / SMTP credentials provided in environment variables',
       });
-      return true;
+      return false;
     }
 
     const info = await transporter.sendMail({
