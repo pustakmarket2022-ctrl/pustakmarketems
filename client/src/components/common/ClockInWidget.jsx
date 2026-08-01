@@ -78,15 +78,20 @@ const ClockInWidget = () => {
         <div>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Office Geofence Attendance Tracker</h3>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            Office Radius Verified Clock-in & Hours Logging
+            Official Shift: <strong>11:00 AM - 06:30 PM</strong> | Geofence Verified Clock-In
           </p>
         </div>
-        <div
-          className="badge badge-info"
-          style={{ padding: '6px 12px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <Clock size={16} />
-          {currentTime.toLocaleTimeString()}
+        <div className="flex-row" style={{ gap: '8px' }}>
+          <div className="badge badge-secondary" style={{ padding: '6px 10px', fontSize: '0.82rem' }}>
+            ⏰ Shift: 11:00 AM - 06:30 PM
+          </div>
+          <div
+            className="badge badge-info"
+            style={{ padding: '6px 12px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Clock size={16} />
+            {currentTime.toLocaleTimeString()}
+          </div>
         </div>
       </div>
 

@@ -46,7 +46,8 @@ exports.checkIn = async (req, res, next) => {
     }
 
     const now = new Date();
-    const isLate = now.getHours() > 10 || (now.getHours() === 10 && now.getMinutes() > 30);
+    // Default Shift: 11:00 AM to 06:30 PM (Late threshold: after 11:15 AM)
+    const isLate = now.getHours() > 11 || (now.getHours() === 11 && now.getMinutes() > 15);
 
     if (!attendance) {
       attendance = new Attendance({

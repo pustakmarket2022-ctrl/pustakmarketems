@@ -11,14 +11,23 @@ const SettingsPage = () => {
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [submittingDept, setSubmittingDept] = useState(false);
 
-  const [companyData, setCompanyData] = useState({
+  const defaultSettings = {
     companyName: 'Pustak Market Publications & Distribution Pvt Ltd',
     tagline: 'Leading Book Publishing & Distribution Company',
     taxId: 'GSTIN2026-PUSTAK-88',
     supportEmail: 'hr@pustakmarket.com',
     currency: 'INR (₹)',
-    workShiftStart: '09:00',
-    workShiftEnd: '17:30',
+    workShiftStart: '11:00',
+    workShiftEnd: '18:30',
+  };
+
+  const [companyData, setCompanyData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ems_company_settings');
+      return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+    } catch (e) {
+      return defaultSettings;
+    }
   });
 
   const fetchDepts = async () => {
@@ -69,7 +78,12 @@ const SettingsPage = () => {
 
   const handleSave = (e) => {
     e.preventDefault();
-    addToast('System settings saved successfully!', 'success');
+    try {
+      localStorage.setItem('ems_company_settings', JSON.stringify(companyData));
+      addToast(`Attendance & Shift Rules saved! Shift: ${companyData.workShiftStart} to ${companyData.workShiftEnd}`, 'success');
+    } catch (err) {
+      addToast('Failed to save settings', 'danger');
+    }
   };
 
   return (
